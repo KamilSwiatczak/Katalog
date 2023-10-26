@@ -1,0 +1,3 @@
+@@..\..\DB\TABLES\LOCATIONS.sql
+@@..\..\DB\TABLES\BOOK_GENRES.sql
+@@..\..\DB\TABLES\BOOKS.sql
