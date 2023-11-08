@@ -15,5 +15,20 @@ as
         pi_id in NUMBER
     );
 
+--grid save
+
+procedure p_manage_book_genre(
+  pi_row_status CHAR,
+  pio_id in out NUMBER,
+  pi_name in VARCHAR2
+);
+
+
+
+
+procedure p_delete_empty_genres;
+
+    
+    
 end pkg_books_genres;
 /
