@@ -28,7 +28,8 @@ procedure p_manage_book_genre(
 
 procedure p_delete_empty_genres;
 
+procedure p_remove_empty_genres;
     
-    
+ procedure   p_eradicate_empty_genres;
 end pkg_books_genres;
 /

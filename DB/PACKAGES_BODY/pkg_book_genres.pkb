@@ -106,7 +106,7 @@ end p_manage_book_genre;
 
   
   
-  -- Opis Procedury
+  -- usuwanie wszystkich pustych gatunków stare
   procedure p_delete_empty_genres
   as
     v_scope logger_logs.scope%type := gc_scope_prefix || 'p_delete_empty_genres';
@@ -133,6 +133,56 @@ end p_manage_book_genre;
   end p_delete_empty_genres;
   
     
+    
+  -- usuwanie wszystkich pustych gatunków nowe
+    procedure p_remove_empty_genres
+    as
+      v_scope logger_logs.scope%type := gc_scope_prefix || 'p_remove_empty_genres';
+      v_params logger.tab_param;
+    begin
+      logger.log('START', v_scope, null, v_params);
+    
+      DELETE FROM BOOK_GENRES 
+      WHERE ID NOT IN (
+        select distinct BOOKS.GENRE_ID 
+        from BOOKS
+        );
+    
+      logger.log('END', v_scope);
+    exception
+      when others then
+        logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
+        raise;
+    end p_remove_empty_genres;
+    
+        --usuwanie wszystkich pustych gatunków inne
+  procedure p_eradicate_empty_genres
+  as
+    v_scope logger_logs.scope%type := gc_scope_prefix || 'p_delete_empty_genres';
+    v_params logger.tab_param;
+    v_title VARCHAR2;
+  begin
+    logger.log('START', v_scope, null, v_params);
+  
+    for row in (
+      select distinct BOOK_GENRES.ID
+      from BOOKS
+      right join BOOK_GENRES on BOOKS.GENRE_ID = BOOK_GENRES.ID
+      where books.id is null
+      )  
+      loop
+         delete from BOOK_GENRES
+         where ID = row.id;
+      
+    end loop;
+  
+    logger.log('END', v_scope);
+  exception
+    when others then
+      logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
+      raise;
+  end p_eradicate_empty_genres;
 
 end pkg_books_genres;
 /
+
