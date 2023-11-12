@@ -160,7 +160,6 @@ end p_manage_book_genre;
   as
     v_scope logger_logs.scope%type := gc_scope_prefix || 'p_delete_empty_genres';
     v_params logger.tab_param;
-    v_title VARCHAR2;
   begin
     logger.log('START', v_scope, null, v_params);
   
@@ -182,6 +181,36 @@ end p_manage_book_genre;
       logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
       raise;
   end p_eradicate_empty_genres;
+
+  
+  
+  -- Merging two book genres
+  procedure p_merge_book_genres(
+    pi_source_id IN NUMBER,
+    pi_target_id IN NUMBER
+    )
+  as
+    v_scope logger_logs.scope%type := gc_scope_prefix || 'p_merge_book_genres';
+    v_params logger.tab_param;
+  
+  begin
+    logger.append_param(v_params, 'pi_source_id', pi_source_id);
+    logger.append_param(v_params, 'pi_target_id', pi_target_id);
+    logger.log('START', v_scope, null, v_params);
+  
+    update books
+    set GENRE_ID = pio_target_id
+    where GENRE_ID = pi_source_id;
+    delete from BOOK_GENRES WHERE ID=pi_source_id;
+  
+    logger.log('Gatunki połączone', v_scope);
+  exception
+    when others then
+      logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
+      raise;
+  end p_merge_book_genres;
+  
+    
 
 end pkg_books_genres;
 /

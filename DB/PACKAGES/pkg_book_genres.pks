@@ -23,13 +23,16 @@ procedure p_manage_book_genre(
   pi_name in VARCHAR2
 );
 
-
+procedure p_merge_book_genres(
+    pi_source_id in NUMBER,
+    pi_target_id in  NUMBER
+);
 
 
 procedure p_delete_empty_genres;
 
 procedure p_remove_empty_genres;
     
- procedure   p_eradicate_empty_genres;
+procedure p_eradicate_empty_genres;
 end pkg_books_genres;
 /
