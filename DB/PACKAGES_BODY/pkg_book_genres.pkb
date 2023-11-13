@@ -1,6 +1,7 @@
-create or replace package body pkg_books_genres
+create or replace package body pkg_book_genres
 as
   gc_scope_prefix constant varchar2(31) := lower('pkg_books_genres') || '.';
+
 function f_create_book_genre(
   pi_name        in         VARCHAR2
 ) return NUMBER 
@@ -199,7 +200,7 @@ end p_manage_book_genre;
     logger.log('START', v_scope, null, v_params);
   
     update books
-    set GENRE_ID = pio_target_id
+    set GENRE_ID = pi_target_id
     where GENRE_ID = pi_source_id;
     delete from BOOK_GENRES WHERE ID=pi_source_id;
   
@@ -212,6 +213,6 @@ end p_manage_book_genre;
   
     
 
-end pkg_books_genres;
+end pkg_book_genres;
 /
 
