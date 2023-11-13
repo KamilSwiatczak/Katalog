@@ -5,8 +5,8 @@ gc_scope_prefix constant varchar2(31) := lower('pkg_books_genres') || '.';
 
 -- Creating and editing locations
 procedure p_create_edit_location(
-  pi_id in NUMBER,
-  pi_name in VARCHAR2)
+  pi_id in locations.id%type,
+  pi_name in locations.name%type)
 as
   v_scope logger_logs.scope%type := gc_scope_prefix || 'p_create_edit_location';
   v_params logger.tab_param;
@@ -36,7 +36,7 @@ end p_create_edit_location;
 
 -- Removing locations
 procedure p_remove_location(
-  pi_id in NUMBER)
+  pi_id in locations.id%type)
 as
   v_scope logger_logs.scope%type := gc_scope_prefix || 'p_remove_location';
   v_params logger.tab_param;

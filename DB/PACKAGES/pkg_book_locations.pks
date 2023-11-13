@@ -7,12 +7,12 @@ as
 */
 
 procedure p_create_edit_location(
-  pi_id in NUMBER,
-  pi_name in VARCHAR2
+  pi_id in locations.id%type,
+  pi_name in locations.name%type
 );
 
 procedure p_remove_location(
-  pi_id in NUMBER
+  pi_id in locations.id%type
 ); 
 
 end pkg_book_locations;
