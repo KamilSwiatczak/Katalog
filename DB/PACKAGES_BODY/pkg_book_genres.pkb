@@ -3,12 +3,12 @@ as
   gc_scope_prefix constant varchar2(31) := lower('pkg_books_genres') || '.';
 
 function f_create_book_genre(
-  pi_name        in         VARCHAR2
-) return NUMBER 
+  pi_name in books.title%type
+) return books.id%type 
 is 
   v_scope logger_logs.scope%type := gc_scope_prefix || 'f_create_book_genre';
   v_params logger.tab_param;
-  v_id NUMBER;
+  v_id books.id%type;
 begin
   logger.append_param(v_params, 'p_name', pi_name);
   logger.log('START', v_scope, null, v_params);
@@ -24,8 +24,8 @@ exception
 end f_create_book_genre;
 
 procedure p_update_book_genre(
-      pi_id    in NUMBER,
-      pi_name  in VARCHAR2
+      pi_id    in books.id%type,
+      pi_name  in books.title%type
     )IS
       v_scope logger_logs.scope%type := gc_scope_prefix || 'p_update_book_genre';
       v_params logger.tab_param;
@@ -44,7 +44,7 @@ exception
   end p_update_book_genre;
 
 procedure p_delete_book_genre(
-  pi_id in NUMBER
+  pi_id in books.id%type
 )IS 
   v_scope logger_logs.scope%type := gc_scope_prefix || 'p_delete_book_genre';
   v_params logger.tab_param;
@@ -77,8 +77,8 @@ end p_delete_book_genre;
 -- Grid save
 procedure p_manage_book_genre(
   pi_row_status CHAR,
-  pio_id in out NUMBER,
-  pi_name in VARCHAR2)
+  pio_id in out books.id%type,
+  pi_name in books.title%type)
 as
   v_scope logger_logs.scope%type := gc_scope_prefix || 'p_manage_book_genre';
   v_params logger.tab_param;
@@ -91,11 +91,11 @@ begin
   logger.log('START', v_scope, null, v_params);
       case pi_row_status
     when 'C' then
-        pio_id := pkg_books_genres.f_create_book_genre(pi_name);
+        pio_id := pkg_book_genres.f_create_book_genre(pi_name);
     when 'U' then
-        pkg_books_genres.p_update_book_genre(pio_id, pi_name);
+        pkg_book_genres.p_update_book_genre(pio_id, pi_name);
     when 'D' then
-		    pkg_books_genres.p_delete_book_genre(pio_id);
+		    pkg_book_genres.p_delete_book_genre(pio_id);
     end case;
 
   logger.log('END', v_scope);
@@ -187,8 +187,8 @@ end p_manage_book_genre;
   
   -- Merging two book genres
   procedure p_merge_book_genres(
-    pi_source_id IN NUMBER,
-    pi_target_id IN NUMBER
+    pi_source_id IN books.id%type,
+    pi_target_id IN books.id%type
     )
   as
     v_scope logger_logs.scope%type := gc_scope_prefix || 'p_merge_book_genres';
