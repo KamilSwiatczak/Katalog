@@ -1,10 +1,10 @@
 create or replace package body pkg_book_genres
 as
-  gc_scope_prefix constant varchar2(31) := lower('pkg_books_genres') || '.';
+  gc_scope_prefix constant varchar2(31) := lower('pkg_book_genres') || '.';
 
 function f_create_book_genre(
-  pi_name in books.title%type
-) return books.id%type 
+  pi_name in book_genres.name%type
+) return book_genres.id%type 
 is 
   v_scope logger_logs.scope%type := gc_scope_prefix || 'f_create_book_genre';
   v_params logger.tab_param;
@@ -24,8 +24,8 @@ exception
 end f_create_book_genre;
 
 procedure p_update_book_genre(
-      pi_id    in books.id%type,
-      pi_name  in books.title%type
+      pi_id    in book_genres.id%type,
+      pi_name  in book_genres.name%type
     )IS
       v_scope logger_logs.scope%type := gc_scope_prefix || 'p_update_book_genre';
       v_params logger.tab_param;
@@ -44,7 +44,7 @@ exception
   end p_update_book_genre;
 
 procedure p_delete_book_genre(
-  pi_id in books.id%type
+  pi_id in book_genres.id%type
 )IS 
   v_scope logger_logs.scope%type := gc_scope_prefix || 'p_delete_book_genre';
   v_params logger.tab_param;
@@ -77,8 +77,8 @@ end p_delete_book_genre;
 -- Grid save
 procedure p_manage_book_genre(
   pi_row_status CHAR,
-  pio_id in out books.id%type,
-  pi_name in books.title%type)
+  pio_id in out book_genres.id%type,
+  pi_name in book_genres.name%type)
 as
   v_scope logger_logs.scope%type := gc_scope_prefix || 'p_manage_book_genre';
   v_params logger.tab_param;
@@ -187,8 +187,8 @@ end p_manage_book_genre;
   
   -- Merging two book genres
   procedure p_merge_book_genres(
-    pi_source_id IN books.id%type,
-    pi_target_id IN books.id%type
+    pi_source_id IN book_genres.id%type,
+    pi_target_id IN book_genres.id%type
     )
   as
     v_scope logger_logs.scope%type := gc_scope_prefix || 'p_merge_book_genres';
