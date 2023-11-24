@@ -5,3 +5,5 @@ prompt ..packages
 @@..\DB\PACKAGES_BODY\pkg_book_locations.pkb;
 @@..\DB\PACKAGES\pkg_books.pks;
 @@..\DB\PACKAGES_BODY\pkg_books.pkb;
+@@..\DB\PACKAGES\pkg_book_lending.pks;
+@@..\DB\PACKAGES_BODY\pkg_book_lending.pkb;
