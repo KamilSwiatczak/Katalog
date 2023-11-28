@@ -35,5 +35,43 @@ end p_create_book_lending;
 
     
 
+procedure p_book_returning(
+  pi_book_id IN book_lending.book_id%type,
+  pi_date in book_lending.end_date%type
+)
+as
+  v_scope logger_logs.scope%type := gc_scope_prefix || 'p_book_returning';
+  v_params logger.tab_param;
+  v_count NUMBER;
+
+begin
+  logger.append_param(v_params, 'pi_book_id', pi_book_id);
+  logger.log('START', v_scope, NULL, v_params);
+
+  SELECT COUNT(*)
+  INTO v_count
+  FROM BOOK_LENDING
+  WHERE book_id = pi_book_id;
+
+  IF v_count = 0 THEN
+    raise_application_error(-20001, 'Ta książka nie była wypożyczona.');
+  ELSE
+    UPDATE BOOK_LENDING
+    SET end_date = pi_date
+    WHERE book_id = pi_book_id AND end_date IS NULL;
+
+    IF SQL%ROWCOUNT = 0 THEN
+      raise_application_error(-20002, 'Ta książka jest zwrócona');
+    END IF;
+  END IF;
+
+  logger.log('END', v_scope);
+EXCEPTION
+  WHEN OTHERS THEN
+    logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, NULL, v_params);
+    RAISE;
+end p_book_returning;
+  
+
 end pkg_book_lending;
 
