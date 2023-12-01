@@ -25,4 +25,3 @@ procedure p_delete_book(
 );
 
 end pkg_books;
-

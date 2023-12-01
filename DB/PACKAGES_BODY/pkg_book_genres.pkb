@@ -215,4 +215,3 @@ end p_manage_book_genre;
 
 end pkg_book_genres;
 /
-

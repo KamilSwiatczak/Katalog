@@ -7,7 +7,6 @@ as
 
 
 
--- Opis Procedury
 procedure p_create_book_lending(
   pi_book_id in book_lending.book_id%type,
   pi_person in book_lending.person%type,
@@ -74,4 +73,3 @@ end p_book_returning;
   
 
 end pkg_book_lending;
-

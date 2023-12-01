@@ -7,3 +7,5 @@ prompt ..packages
 @@..\DB\PACKAGES_BODY\pkg_books.pkb;
 @@..\DB\PACKAGES\pkg_book_lending.pks;
 @@..\DB\PACKAGES_BODY\pkg_book_lending.pkb;
+@@..\DB\PACKAGES\pkg_history.pks;
+@@..\DB\PACKAGES_BODY\pkg_history.pkb;
