@@ -3,6 +3,7 @@ as
 gc_scope_prefix constant varchar2(31) := lower('pkg_books_genres') || '.';
 
 
+
 -- Creating and editing locations
 procedure p_create_edit_location(
   pi_id in locations.id%type,

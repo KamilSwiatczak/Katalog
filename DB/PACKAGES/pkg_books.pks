@@ -23,5 +23,7 @@ procedure p_data_export;
 procedure p_delete_book(
   pi_id in books.id%type
 );
-
+procedure p_restore_book(
+  pi_id in books.id%type
+);
 end pkg_books;

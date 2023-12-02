@@ -2,6 +2,9 @@ create or replace package body pkg_book_genres
 as
   gc_scope_prefix constant varchar2(31) := lower('pkg_book_genres') || '.';
 
+
+
+
 function f_create_book_genre(
   pi_name in book_genres.name%type
 ) return book_genres.id%type 
@@ -22,6 +25,9 @@ exception
     logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
     raise;
 end f_create_book_genre;
+
+
+
 
 procedure p_update_book_genre(
       pi_id    in book_genres.id%type,

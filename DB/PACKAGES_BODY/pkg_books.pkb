@@ -7,6 +7,7 @@ as
 
 
 
+
 procedure p_book_create_update(
     pi_id in books.id%type,
     pi_title in books.title%type,
@@ -67,6 +68,9 @@ exception
     logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
     raise;
 end p_book_create_update;
+
+
+
 
 PROCEDURE p_data_export as
     v_scope logger_logs.scope%type := gc_scope_prefix || 'p_data_export';
@@ -137,6 +141,36 @@ PROCEDURE p_data_export as
       raise;
   end p_delete_book;
   
-    
+
+
+
+procedure p_restore_book(
+  pi_id in books.id%type)
+as
+  v_scope logger_logs.scope%type := gc_scope_prefix || 'p_restore_book';
+  v_params logger.tab_param;
+  v_deleted_count NUMBER;
+
+begin
+  logger.append_param(v_params, 'pi_id', pi_id);
+  select count(*)
+  into v_deleted_count
+  from BOOKS
+  where id = pi_id AND DELETED = 'Y';
+if v_deleted_count = 1 THEN
+  update BOOKS
+  set DELETED ='N'
+  where id = pi_id;
+  pkg_history.p_history_log(pi_action => 'RESTORE', pi_book_id => pi_id);
+  logger.log('Książka przywrócona', v_scope);
+  else RAISE_APPLICATION_ERROR(-20006, 'Książka nie była usunięta.');
+end if;
+logger.log('END', v_scope);
+  
+exception
+  when others then
+    logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
+    raise;
+end p_restore_book;
 
 end pkg_books;
