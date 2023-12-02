@@ -24,7 +24,7 @@ procedure p_book_create_update(
 as
   v_scope logger_logs.scope%type := gc_scope_prefix || 'p_book_create_update';
   v_params logger.tab_param;
-
+  v_id books.id%type;
 begin
   logger.append_param(v_params, 'pi_id', pi_id);
   logger.append_param(v_params, 'pi_title', pi_title);
@@ -42,6 +42,9 @@ begin
   if pi_id is null then
     INSERT INTO BOOKS (title, author, isbn, year, genre_id, location_id, score, description, cover, MIME_TYPE, FILE_NAME)
     VALUES (pi_title, pi_author, pi_isbn, pi_year, pi_genre_id, pi_location_id, pi_score, pi_description, pi_cover, pi_mime, pi_file_name);
+    select id into v_id from books where  isbn = pi_isbn and title = pi_title;
+    pkg_history.p_history_log(pi_action => 'NEW', pi_book_id => v_id);
+    logger.log('Książka '||pi_title||' została dodana.', v_scope);
   else update books
         set title=pi_title,
             author=pi_author,
@@ -55,9 +58,10 @@ begin
             mime_type=nvl(pi_mime, mime_type),
             file_name=nvl(pi_file_name, file_name)
         where ID = pi_id;
+        pkg_history.p_history_log(pi_action => 'UPDATE', pi_book_id => pi_id);
+        logger.log('Książka '||pi_title||' została edytowana.', v_scope);
   end if;
-
-  logger.log('Książka '||pi_title||' dodana/edytowana.', v_scope);
+logger.log('END', v_scope);
 exception
   when others then
     logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
@@ -107,13 +111,25 @@ PROCEDURE p_data_export as
   as
     v_scope logger_logs.scope%type := gc_scope_prefix || 'p_delete_book';
     v_params logger.tab_param;
+    v_row_count NUMBER;
   
   begin
     logger.append_param(v_params, 'pi_id', pi_id);
     logger.log('START', v_scope, null, v_params);
-  
-    DELETE FROM books WHERE ID=pi_id;
-  
+    SELECT COUNT(*)
+    INTO v_row_count
+    FROM history
+    WHERE book_id = pi_id;
+    if v_row_count <= 1 THEN 
+      DELETE FROM books 
+      WHERE ID=pi_id;
+      else
+      update BOOKS
+      set DELETED ='Y'
+      where id = pi_id;
+      pkg_history.p_history_log(pi_action => 'DELETE', pi_book_id => pi_id);
+    end if;
+    
     logger.log('Książka usunięta.', v_scope);
   exception
     when others then
