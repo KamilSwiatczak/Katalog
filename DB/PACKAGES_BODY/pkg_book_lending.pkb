@@ -63,7 +63,7 @@ begin
 
     IF SQL%ROWCOUNT = 0 THEN
       raise_application_error(-20002, 'Ta książka jest zwrócona');
-      ELSE
+    ELSE
       pkg_history.p_history_log(pi_action => 'RETURN', pi_book_id => pi_book_id);
     END IF;
   END IF;

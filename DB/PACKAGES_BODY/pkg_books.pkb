@@ -42,8 +42,8 @@ begin
 
   if pi_id is null then
     INSERT INTO BOOKS (title, author, isbn, year, genre_id, location_id, score, description, cover, MIME_TYPE, FILE_NAME)
-    VALUES (pi_title, pi_author, pi_isbn, pi_year, pi_genre_id, pi_location_id, pi_score, pi_description, pi_cover, pi_mime, pi_file_name);
-    select id into v_id from books where  isbn = pi_isbn and title = pi_title;
+    VALUES (pi_title, pi_author, pi_isbn, pi_year, pi_genre_id, pi_location_id, pi_score, pi_description, pi_cover, pi_mime, pi_file_name)
+    returning id into v_id;
     pkg_history.p_history_log(pi_action => 'NEW', pi_book_id => v_id);
     logger.log('Książka '||pi_title||' została dodana.', v_scope);
   else update books
@@ -120,17 +120,22 @@ PROCEDURE p_data_export as
   begin
     logger.append_param(v_params, 'pi_id', pi_id);
     logger.log('START', v_scope, null, v_params);
+
     SELECT COUNT(*)
     INTO v_row_count
     FROM history
     WHERE book_id = pi_id;
+    
     if v_row_count <= 1 THEN 
+      DELETE FROM history
+      WHERE book_id=pi_id;
       DELETE FROM books 
       WHERE ID=pi_id;
-      else
+    else
       update BOOKS
       set DELETED ='Y'
-      where id = pi_id;
+      where ID = pi_id;
+
       pkg_history.p_history_log(pi_action => 'DELETE', pi_book_id => pi_id);
     end if;
     
@@ -144,33 +149,38 @@ PROCEDURE p_data_export as
 
 
 
-procedure p_restore_book(
-  pi_id in books.id%type)
-as
-  v_scope logger_logs.scope%type := gc_scope_prefix || 'p_restore_book';
-  v_params logger.tab_param;
-  v_deleted_count NUMBER;
-
-begin
-  logger.append_param(v_params, 'pi_id', pi_id);
-  select count(*)
-  into v_deleted_count
-  from BOOKS
-  where id = pi_id AND DELETED = 'Y';
-if v_deleted_count = 1 THEN
-  update BOOKS
-  set DELETED ='N'
-  where id = pi_id;
-  pkg_history.p_history_log(pi_action => 'RESTORE', pi_book_id => pi_id);
-  logger.log('Książka przywrócona', v_scope);
-  else RAISE_APPLICATION_ERROR(-20006, 'Książka nie była usunięta.');
-end if;
-logger.log('END', v_scope);
+  procedure p_restore_book(
+    pi_id in books.id%type)
+  as
+    v_scope logger_logs.scope%type := gc_scope_prefix || 'p_restore_book';
+    v_params logger.tab_param;
+    v_deleted_count NUMBER;
   
-exception
-  when others then
-    logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
-    raise;
-end p_restore_book;
+  begin
+    logger.append_param(v_params, 'pi_id', pi_id);
+    logger.log('START', v_scope, null, v_params);
+    select count(*)
+    into v_deleted_count
+    from BOOKS
+    where id = pi_id AND DELETED = 'Y';
+  
+    if v_deleted_count = 1 THEN
+      update BOOKS
+      set DELETED ='N'
+      where id = pi_id;
+  
+      pkg_history.p_history_log(pi_action => 'RESTORE', pi_book_id => pi_id);
+      logger.log('Książka przywrócona', v_scope);
+    else 
+      RAISE_APPLICATION_ERROR(-20006, 'Książka nie była usunięta.');
+    end if;
+  
+    logger.log('END', v_scope);
+    
+  exception
+    when others then
+      logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
+      raise;
+  end p_restore_book;
 
 end pkg_books;
