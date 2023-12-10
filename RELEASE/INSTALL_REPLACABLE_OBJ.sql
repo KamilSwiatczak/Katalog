@@ -9,3 +9,5 @@ prompt ..packages
 @@..\DB\PACKAGES_BODY\pkg_book_lending.pkb;
 @@..\DB\PACKAGES\pkg_history.pks;
 @@..\DB\PACKAGES_BODY\pkg_history.pkb;
+@@..\DB\PACKAGES\pkg_backups.pks;
+@@..\DB\PACKAGES_BODY\pkg_backups.pkb;
