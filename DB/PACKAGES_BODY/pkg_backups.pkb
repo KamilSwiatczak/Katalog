@@ -21,8 +21,8 @@ PROCEDURE p_genres_export as
 
     apex_exec.close( v_context );
     
-    insert into my_temp_files (file_name, file_content)
-    values (v_export.file_name, v_export.content_blob);
+    insert into my_temp_files (file_name, file_content, mime_type)
+    values (v_export.file_name, v_export.content_blob, v_export.mime_type);
 
     logger.log('Eksportowano book_lending', v_scope);
 
@@ -55,8 +55,8 @@ PROCEDURE p_actions_export as
 
     apex_exec.close( v_context );
     
-    insert into my_temp_files (file_name, file_content)
-    values (v_export.file_name, v_export.content_blob);
+    insert into my_temp_files (file_name, file_content, mime_type)
+    values (v_export.file_name, v_export.content_blob, v_export.mime_type);
 
     logger.log('Eksportowano actions', v_scope);
 
@@ -89,8 +89,8 @@ PROCEDURE p_lending_export as
 
     apex_exec.close( v_context );
     
-    insert into my_temp_files (file_name, file_content)
-    values (v_export.file_name, v_export.content_blob);
+    insert into my_temp_files (file_name, file_content, mime_type)
+    values (v_export.file_name, v_export.content_blob, v_export.mime_type);
 
     logger.log('Eksportowano book_lending', v_scope);
 
@@ -123,8 +123,8 @@ PROCEDURE p_location_export as
 
     apex_exec.close( v_context );
     
-    insert into my_temp_files (file_name, file_content)
-    values (v_export.file_name, v_export.content_blob);
+    insert into my_temp_files (file_name, file_content, mime_type)
+    values (v_export.file_name, v_export.content_blob, v_export.mime_type);
 
     logger.log('Eksportowano locations', v_scope);
 
@@ -157,8 +157,8 @@ PROCEDURE p_books_export as
 
     apex_exec.close( v_context );
     
-    insert into my_temp_files (file_name, file_content)
-    values (v_export.file_name, v_export.content_blob);
+    insert into my_temp_files (file_name, file_content, mime_type)
+    values (v_export.file_name, v_export.content_blob, v_export.mime_type);
 
     logger.log('Eksportowano books', v_scope);
 
@@ -191,8 +191,8 @@ PROCEDURE p_backups_export as
 
     apex_exec.close( v_context );
     
-    insert into my_temp_files (file_name, file_content)
-    values (v_export.file_name, v_export.content_blob);
+    insert into my_temp_files (file_name, file_content, mime_type)
+    values (v_export.file_name, v_export.content_blob, v_export.mime_type);
 
     logger.log('Eksportowano backups', v_scope);
 
@@ -225,8 +225,8 @@ PROCEDURE p_history_export as
 
     apex_exec.close( v_context );
     
-    insert into my_temp_files (file_name, file_content)
-    values (v_export.file_name, v_export.content_blob);
+    insert into my_temp_files (file_name, file_content, mime_type)
+    values (v_export.file_name, v_export.content_blob, v_export.mime_type);
 
     logger.log('Eksportowano history', v_scope);
 
@@ -250,19 +250,27 @@ as
 begin
   logger.log('START', v_scope, null, v_params);
 
-      for i  in ( select file_name, file_content
-                    from MY_TEMP_FILES)
+  for i in (select file_name, file_content
+                from MY_TEMP_FILES)
     loop
         apex_zip.add_file (
             p_zipped_blob => v_zip_file,
             p_file_name   => i.file_name,
             p_content     => i.file_content);
     end loop;
-
-    apex_zip.finish (
-        p_zipped_blob => v_zip_file );
-insert into backups (user_name, time, backup)
-values (apex_custom_auth.get_username, LOCALTIMESTAMP, v_zip_file);
+  for c in (select file_name, cover
+          from BOOKS
+          where cover is not null)
+    loop 
+        apex_zip.add_file (
+            p_zipped_blob => v_zip_file,
+            p_file_name   => c.file_name,
+            p_content     => c.cover);
+    end loop;            
+  apex_zip.finish (
+        p_zipped_blob => v_zip_file);
+  insert into backups (user_name, time, backup, mime_type, file_name)
+  values (apex_custom_auth.get_username, LOCALTIMESTAMP, v_zip_file, 'application/zip', 'backup'||LOCALTIMESTAMP||'.zip');
   logger.log('END', v_scope);
 exception
   when others then
