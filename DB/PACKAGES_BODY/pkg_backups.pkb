@@ -17,7 +17,7 @@ PROCEDURE p_genres_export as
     v_export := apex_data_export.export (
                     p_context   => v_context,
                     p_format    => apex_data_export.c_format_xlsx,
-                    p_file_name => 'genres_backup');
+                    p_file_name => 'genres/genres_backup');
 
     apex_exec.close( v_context );
     
@@ -51,7 +51,7 @@ PROCEDURE p_actions_export as
     v_export := apex_data_export.export (
                     p_context   => v_context,
                     p_format    => apex_data_export.c_format_xlsx,
-                    p_file_name => 'actions_backup');
+                    p_file_name => 'actions/actions_backup');
 
     apex_exec.close( v_context );
     
@@ -85,7 +85,7 @@ PROCEDURE p_lending_export as
     v_export := apex_data_export.export (
                     p_context   => v_context,
                     p_format    => apex_data_export.c_format_xlsx,
-                    p_file_name => 'lending_backup');
+                    p_file_name => 'lending/lending_backup');
 
     apex_exec.close( v_context );
     
@@ -119,7 +119,7 @@ PROCEDURE p_location_export as
     v_export := apex_data_export.export (
                     p_context   => v_context,
                     p_format    => apex_data_export.c_format_xlsx,
-                    p_file_name => 'location_backup');
+                    p_file_name => 'locations/location_backup');
 
     apex_exec.close( v_context );
     
@@ -144,16 +144,36 @@ PROCEDURE p_books_export as
     v_params logger.tab_param;
     v_context apex_exec.t_context;
     v_export  apex_data_export.t_export;
+    -- v_column apex_data_export.t_columns;
   BEGIN
     logger.log('START', v_scope, null, v_params);
     v_context := apex_exec.open_query_context(
         p_location    => apex_exec.c_location_local_db,
         p_sql_query   => 'select * from books');
+    -- apex_data_export.ADD_COLUMN(
+    --   p_columns => v_column,             
+    --   p_name => 'ID'
+    -- );
+    -- apex_data_export.ADD_COLUMN(
+    --   p_columns => v_column,
+    --   p_name => 'TITLE'
+    -- );
+    -- apex_data_export.ADD_COLUMN(
+    --   p_columns => v_column,
+    --   p_name => 'AUTHOR'
+    -- );
+    -- apex_data_export.ADD_COLUMN(
+    --   p_columns => v_column,
+    --   p_name => 'ISBN'
+    -- );
 
     v_export := apex_data_export.export (
                     p_context   => v_context,
                     p_format    => apex_data_export.c_format_xlsx,
-                    p_file_name => 'books_backup');
+                    p_file_name => 'books/books_backup'
+                    -- ,
+                    -- p_columns   => v_column
+                    );
 
     apex_exec.close( v_context );
     
@@ -187,7 +207,7 @@ PROCEDURE p_backups_export as
     v_export := apex_data_export.export (
                     p_context   => v_context,
                     p_format    => apex_data_export.c_format_xlsx,
-                    p_file_name => 'backups_backup');
+                    p_file_name => 'backups/backups_backup');
 
     apex_exec.close( v_context );
     
@@ -221,7 +241,7 @@ PROCEDURE p_history_export as
     v_export := apex_data_export.export (
                     p_context   => v_context,
                     p_format    => apex_data_export.c_format_xlsx,
-                    p_file_name => 'history_backup');
+                    p_file_name => 'history/history_backup');
 
     apex_exec.close( v_context );
     
@@ -249,28 +269,34 @@ as
 
 begin
   logger.log('START', v_scope, null, v_params);
-
+  pkg_backups.p_books_export;
+  pkg_backups.p_location_export;
+  pkg_backups.p_genres_export;
+  pkg_backups.p_lending_export;
+  pkg_backups.p_history_export;
+  pkg_backups.p_actions_export;
   for i in (select file_name, file_content
                 from MY_TEMP_FILES)
     loop
         apex_zip.add_file (
             p_zipped_blob => v_zip_file,
-            p_file_name   => i.file_name,
+            p_file_name   => 'tables/'||i.file_name,
             p_content     => i.file_content);
     end loop;
-  for c in (select file_name, cover
+  for c in (select id, title, file_name, cover
           from BOOKS
           where cover is not null)
     loop 
         apex_zip.add_file (
             p_zipped_blob => v_zip_file,
-            p_file_name   => c.file_name,
+            p_file_name   => 'covers/'||c.id||'_'||c.title||SUBSTR(c.file_name, INSTR(c.file_name, '.', -1)),
             p_content     => c.cover);
     end loop;            
   apex_zip.finish (
         p_zipped_blob => v_zip_file);
   insert into backups (user_name, time, backup, mime_type, file_name)
   values (apex_custom_auth.get_username, LOCALTIMESTAMP, v_zip_file, 'application/zip', 'backup'||LOCALTIMESTAMP||'.zip');
+  delete from MY_TEMP_FILES;
   logger.log('END', v_scope);
 exception
   when others then
@@ -278,7 +304,111 @@ exception
     raise;
 end p_zip_backup;
 
+
+procedure p_backup_restore(
+  pi_zip_file in blob)
+as
+  v_scope logger_logs.scope%type := gc_scope_prefix || 'p_backup_restore';
+  v_params logger.tab_param;
+  v_unzipped_file blob;
+  v_files apex_zip.t_files;
+begin
+  logger.append_param(v_params, 'pi_zip_file', length(pi_zip_file));
+  logger.log('START', v_scope, null, v_params);
+
+  v_files := apex_zip.get_files (
+            p_zipped_blob => pi_zip_file);
+for i in 1 .. v_files.count 
+      loop
+        v_unzipped_file := apex_zip.get_file_content (
+            p_zipped_blob => pi_zip_file,
+            p_file_name   => v_files(i));
+        insert into MY_TEMP_FILES (file_name, file_content)
+        values (v_files(i), v_unzipped_file);
+      end loop;
+  logger.log('END', v_scope);
+exception
+  when others then
+    logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
+    raise;
+end p_backup_restore;
+
+
+
+procedure p_RESTORE_FROM_EXISTING_BACKUP(
+  pi_backup_id backups.id%type)
+as
+  v_scope logger_logs.scope%type := gc_scope_prefix || 'p_RESTORE_FROM_EXISTING_BACKUP';
+  v_params logger.tab_param;
+  v_file_content blob;
+begin
+  logger.append_param(v_params, 'pi_backup_id', pi_backup_id);
+  logger.log('START', v_scope, null, v_params);
+
+  select backup into v_file_content from backups
+  where id = pi_backup_id;
+  p_backup_restore(v_file_content);
+  logger.log('END', v_scope);
+exception
+  when others then
+    logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
+    raise;
+end p_RESTORE_FROM_EXISTING_BACKUP;
+
+
+procedure p_parse_to_collection
+as
+  v_scope logger_logs.scope%type := gc_scope_prefix || 'p_parse_to_collection';
+  v_params logger.tab_param;
+  v_table_name varchar2(30); 
+begin
+  logger.log('START', v_scope, null, v_params);
   
+  for i in (
+    
+  select file_content, file_name
+  from MY_TEMP_FILES where file_name like 'tables/%.xlsx')
+  loop
+   v_table_name := substr(i.file_name,instr(i.file_name,'/')+1,instr(i.file_name,'/',1,2)-instr(i.file_name,'/')-1)||'_backup';
+   APEX_COLLECTION.CREATE_OR_TRUNCATE_COLLECTION(v_table_name);
+   for c in (select * from table (apex_data_parser.parse(
+                  p_content => i.file_content,
+                  p_file_type => APEX_DATA_PARSER.c_file_type_xlsx,
+                  p_skip_rows => 1
+                  )))
+      loop
+        APEX_COLLECTION.ADD_MEMBER(
+      p_collection_name => v_table_name,
+        p_c001 => c.col001,
+        p_c002 => c.col002,
+        p_c003 => c.col003,
+        p_c004 => c.col004,
+        p_c005 => c.col005,
+        p_c006 => c.col006,
+        p_c007 => c.col007,
+        p_c008 => c.col008,
+        p_c009 => c.col009,
+        p_c010 => c.col010,
+        p_c011 => c.col011,
+        p_c012 => c.col012,
+        p_c013 => c.col013,
+        p_c014 => c.col014,
+        p_c015 => c.col015,
+        p_c016 => c.col016,
+        p_c017 => c.col017,
+        p_c018 => c.col018,
+        p_c019 => c.col019,
+        p_c020 => c.col020
+        );
+      end loop; 
+  end loop;
+  
+  logger.log('END', v_scope);
+exception
+  when others then
+    logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
+    raise;
+end p_parse_to_collection;
 
 
 end pkg_backups;
