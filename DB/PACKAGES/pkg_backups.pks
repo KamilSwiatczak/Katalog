@@ -17,6 +17,12 @@ procedure p_RESTORE_FROM_EXISTING_BACKUP(
   pi_backup_id backups.id%type
 );
 procedure p_parse_to_collection;
+procedure p_restore_locations;
+procedure p_restore_lending;
+procedure p_restore_history;
+procedure p_restore_genres;
+procedure p_restore_actions;
+procedure p_restore_books;
 
 end pkg_backups;
 /
