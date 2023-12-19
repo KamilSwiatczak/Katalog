@@ -9,70 +9,71 @@ as
 
 
 procedure p_book_create_update(
-    pi_id in books.id%type,
-    pi_title in books.title%type,
-    pi_author in books.author%type,
-    pi_isbn in books.isbn%type,
-    pi_year in books.year%type,
-    pi_genre_id in books.genre_id%type,
-    pi_location_id in books.location_id%type,
-    pi_score in books.score%type,
-    pi_description in books.description%type,
-    pi_cover in books.cover%type,
-    pi_mime in books.MIME_TYPE%type,
-    pi_file_name in books.FILE_NAME%type
-)
-as
-  v_scope logger_logs.scope%type := gc_scope_prefix || 'p_book_create_update';
-  v_params logger.tab_param;
-  v_id books.id%type;
-begin
-  logger.append_param(v_params, 'pi_id', pi_id);
-  logger.append_param(v_params, 'pi_title', pi_title);
-  logger.append_param(v_params, 'pi_author', pi_author);
-  logger.append_param(v_params, 'pi_isbn', pi_isbn);
-  logger.append_param(v_params, 'pi_year', pi_year);
-  logger.append_param(v_params, 'pi_genre_id', pi_genre_id);
-  logger.append_param(v_params, 'pi_location_id', pi_location_id);
-  logger.append_param(v_params, 'pi_score', pi_score);
-  logger.append_param(v_params, 'pi_description', pi_description);
-  logger.append_param(v_params, 'pi_mime', pi_mime);
-  logger.append_param(v_params, 'pi_file_name', pi_file_name);
-  logger.log('START', v_scope, null, v_params);
+      pi_id in books.id%type,
+      pi_title in books.title%type,
+      pi_author in books.author%type,
+      pi_isbn in books.isbn%type,
+      pi_year in books.year%type,
+      pi_genre_id in books.genre_id%type,
+      pi_location_id in books.location_id%type,
+      pi_score in books.score%type,
+      pi_description in books.description%type,
+      pi_cover in books.cover%type,
+      pi_mime in books.MIME_TYPE%type,
+      pi_file_name in books.FILE_NAME%type
+  )
+  as
+    v_scope logger_logs.scope%type := gc_scope_prefix || 'p_book_create_update';
+    v_params logger.tab_param;
+    v_id books.id%type;
+  begin
+    logger.append_param(v_params, 'pi_id', pi_id);
+    logger.append_param(v_params, 'pi_title', pi_title);
+    logger.append_param(v_params, 'pi_author', pi_author);
+    logger.append_param(v_params, 'pi_isbn', pi_isbn);
+    logger.append_param(v_params, 'pi_year', pi_year);
+    logger.append_param(v_params, 'pi_genre_id', pi_genre_id);
+    logger.append_param(v_params, 'pi_location_id', pi_location_id);
+    logger.append_param(v_params, 'pi_score', pi_score);
+    logger.append_param(v_params, 'pi_description', pi_description);
+    logger.append_param(v_params, 'pi_mime', pi_mime);
+    logger.append_param(v_params, 'pi_file_name', pi_file_name);
+    logger.log('START', v_scope, null, v_params);
 
-  if pi_id is null then
-    INSERT INTO BOOKS (title, author, isbn, year, genre_id, location_id, score, description, cover, MIME_TYPE, FILE_NAME)
-    VALUES (pi_title, pi_author, pi_isbn, pi_year, pi_genre_id, pi_location_id, pi_score, pi_description, pi_cover, pi_mime, pi_file_name)
-    returning id into v_id;
-    pkg_history.p_history_log(pi_action => 'NEW', pi_book_id => v_id);
-    logger.log('Książka '||pi_title||' została dodana.', v_scope);
-  else update books
-        set title=pi_title,
-            author=pi_author,
-            isbn=pi_isbn,
-            year=pi_year,
-            genre_id=pi_genre_id,
-            location_id=pi_location_id,
-            score=pi_score,
-            description=pi_description,
-            cover=nvl(pi_cover, cover),
-            mime_type=nvl(pi_mime, mime_type),
-            file_name=nvl(pi_file_name, file_name)
-        where ID = pi_id;
-        pkg_history.p_history_log(pi_action => 'UPDATE', pi_book_id => pi_id);
-        logger.log('Książka '||pi_title||' została edytowana.', v_scope);
-  end if;
-logger.log('END', v_scope);
-exception
-  when others then
-    logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
-    raise;
+    if pi_id is null then
+      INSERT INTO BOOKS (title, author, isbn, year, genre_id, location_id, score, description, cover, MIME_TYPE, FILE_NAME)
+      VALUES (pi_title, pi_author, pi_isbn, pi_year, pi_genre_id, pi_location_id, pi_score, pi_description, pi_cover, pi_mime, pi_file_name)
+      returning id into v_id;
+      pkg_history.p_history_log(pi_action => 'NEW', pi_book_id => v_id);
+      logger.log('Książka '||pi_title||' została dodana.', v_scope);
+    else update books
+          set title=pi_title,
+              author=pi_author,
+              isbn=pi_isbn,
+              year=pi_year,
+              genre_id=pi_genre_id,
+              location_id=pi_location_id,
+              score=pi_score,
+              description=pi_description,
+              cover=nvl(pi_cover, cover),
+              mime_type=nvl(pi_mime, mime_type),
+              file_name=nvl(pi_file_name, file_name)
+          where ID = pi_id;
+          pkg_history.p_history_log(pi_action => 'UPDATE', pi_book_id => pi_id);
+          logger.log('Książka '||pi_title||' została edytowana.', v_scope);
+    end if;
+  logger.log('END', v_scope);
+  exception
+    when others then
+      logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
+      raise;
 end p_book_create_update;
 
 
 
 
-PROCEDURE p_data_export as
+PROCEDURE p_data_export 
+  as
     v_scope logger_logs.scope%type := gc_scope_prefix || 'p_data_export';
     v_params logger.tab_param;
     l_context apex_exec.t_context; 
@@ -105,12 +106,12 @@ PROCEDURE p_data_export as
         raise;
         apex_exec.close( l_context );
         raise;
-  END p_data_export;    
+END p_data_export;    
   
   
   
 
-  procedure p_delete_book(
+procedure p_delete_book(
     pi_id in books.id%type)
   as
     v_scope logger_logs.scope%type := gc_scope_prefix || 'p_delete_book';
@@ -144,12 +145,12 @@ PROCEDURE p_data_export as
     when others then
       logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
       raise;
-  end p_delete_book;
+end p_delete_book;
   
 
 
 
-  procedure p_restore_book(
+procedure p_restore_book(
     pi_id in books.id%type)
   as
     v_scope logger_logs.scope%type := gc_scope_prefix || 'p_restore_book';
@@ -181,6 +182,81 @@ PROCEDURE p_data_export as
     when others then
       logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
       raise;
-  end p_restore_book;
+end p_restore_book;
+
+
+
+
+
+procedure p_openlibrary_api(
+    pi_isbn in books.isbn%type)
+  as
+    v_scope logger_logs.scope%type := gc_scope_prefix || 'p_openlibrary_api';
+    v_params logger.tab_param;
+    v_url VARCHAR2(4000);
+    v_response CLOB;
+    v_year apex_t_varchar2;
+    j apex_json.t_values;
+    v_id varchar2(200);
+    v_members apex_t_varchar2;
+    v_publishers apex_t_varchar2;
+  begin
+    logger.append_param(v_params, 'pi_isbn', pi_isbn);
+    logger.log('START', v_scope, null, v_params);
+    v_url := 'https://openlibrary.org/api/volumes/brief/isbn/'||pi_isbn||'.json';
+    v_response := APEX_WEB_SERVICE.MAKE_REST_REQUEST(
+        p_url => v_url,
+        p_http_method => 'GET'
+    );
+    
+    apex_json.parse(j, v_response);
+    
+    v_members := apex_json.GET_MEMBERS (
+        p_values => j,
+        p_path => 'records'
+    );
+    
+    v_id := v_members(1);
+    
+    v_year := APEX_JSON.GET_T_VARCHAR2 (
+        p_path => 'records.%0.publishDates',
+        p0 => v_id,
+        p_values => j
+    );
+    v_publishers := APEX_JSON.GET_T_VARCHAR2 (
+        p_path => 'records.%0.details.details.publishers',
+        p0 => v_id,
+        p_values => j
+    );
+    
+    IF v_year IS NOT NULL THEN
+        
+        FOR i IN v_year.FIRST .. v_year.LAST 
+        LOOP 
+            update books
+              set YEAR=SUBSTR(v_year(i),-4)
+            where ISBN=pi_isbn;
+        END LOOP;
+    END IF;
+    IF v_publishers IS NOT NULL THEN
+        FOR i IN v_publishers.FIRST .. v_publishers.LAST 
+        LOOP 
+            update books
+              set PUBLISHER=v_publishers(i)
+            where ISBN=pi_isbn;
+        END LOOP;
+    END IF;
+
+  logger.log('END', v_scope);
+  exception
+    when others then
+      logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
+      raise;
+
+end p_openlibrary_api;
+
+
+  
+    
 
 end pkg_books;

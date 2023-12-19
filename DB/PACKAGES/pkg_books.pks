@@ -26,4 +26,8 @@ procedure p_delete_book(
 procedure p_restore_book(
   pi_id in books.id%type
 );
+
+procedure p_openlibrary_api(
+  pi_isbn in books.isbn%type
+);
 end pkg_books;

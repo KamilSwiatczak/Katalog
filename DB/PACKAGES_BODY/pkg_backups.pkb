@@ -355,11 +355,11 @@ procedure p_RESTORE_FROM_EXISTING_BACKUP(
 
     p_parse_to_collection;
 
-    delete from LOCATIONS;
-    delete from BOOK_GENRES;
     delete from BOOK_LENDING;
     delete from HISTORY;
     delete from BOOKS;
+    delete from LOCATIONS;
+    delete from BOOK_GENRES;
     delete from ACTIONS;
 
     
