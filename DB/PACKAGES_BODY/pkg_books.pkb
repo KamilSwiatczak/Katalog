@@ -194,7 +194,9 @@ procedure p_openlibrary_api(
     v_scope logger_logs.scope%type := gc_scope_prefix || 'p_openlibrary_api';
     v_params logger.tab_param;
     v_url VARCHAR2(4000);
+    v_cover_url VARCHAR2(4000);
     v_response CLOB;
+    v_cover BLOB;
     v_year apex_t_varchar2;
     j apex_json.t_values;
     v_id varchar2(200);
@@ -204,11 +206,15 @@ procedure p_openlibrary_api(
     logger.append_param(v_params, 'pi_isbn', pi_isbn);
     logger.log('START', v_scope, null, v_params);
     v_url := 'https://openlibrary.org/api/volumes/brief/isbn/'||pi_isbn||'.json';
+    v_cover_url := 'https://covers.openlibrary.org/b/isbn/'||pi_isbn||'-L.jpg'; 
     v_response := APEX_WEB_SERVICE.MAKE_REST_REQUEST(
         p_url => v_url,
         p_http_method => 'GET'
     );
-    
+    v_cover := APEX_WEB_SERVICE.MAKE_REST_REQUEST_B(
+        p_url => v_cover_url,
+        p_http_method => 'GET'
+    );
     apex_json.parse(j, v_response);
     
     v_members := apex_json.GET_MEMBERS (
@@ -246,7 +252,11 @@ procedure p_openlibrary_api(
             where ISBN=pi_isbn;
         END LOOP;
     END IF;
-
+    IF v_cover IS NOT NULL THEN
+            update books
+              set COVER=v_cover, MIME_TYPE='image/jpeg'
+            where ISBN=pi_isbn;
+    END IF;
   logger.log('END', v_scope);
   exception
     when others then
