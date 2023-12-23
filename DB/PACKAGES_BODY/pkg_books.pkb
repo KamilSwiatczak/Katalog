@@ -197,16 +197,19 @@ procedure p_openlibrary_api(
     v_cover_url VARCHAR2(4000);
     v_response CLOB;
     v_cover BLOB;
-    v_year apex_t_varchar2;
     j apex_json.t_values;
     v_id varchar2(200);
     v_members apex_t_varchar2;
-    v_publishers apex_t_varchar2;
+    v_year varchar2(200);
+    v_publisher varchar2(200);
+    v_title varchar2(200);
+    v_author varchar2(200);
+    v_lang varchar2(200);
   begin
     logger.append_param(v_params, 'pi_isbn', pi_isbn);
     logger.log('START', v_scope, null, v_params);
     v_url := 'https://openlibrary.org/api/volumes/brief/isbn/'||pi_isbn||'.json';
-    v_cover_url := 'https://covers.openlibrary.org/b/isbn/'||pi_isbn||'-L.jpg'; 
+    v_cover_url := 'https://covers.openlibrary.org/b/isbn/'||pi_isbn||'-S.jpg'; 
     v_response := APEX_WEB_SERVICE.MAKE_REST_REQUEST(
         p_url => v_url,
         p_http_method => 'GET'
@@ -224,38 +227,67 @@ procedure p_openlibrary_api(
     
     v_id := v_members(1);
     
-    v_year := APEX_JSON.GET_T_VARCHAR2 (
-        p_path => 'records.%0.publishDates',
+    v_year := APEX_JSON.GET_VARCHAR2 (
+        p_path => 'records.%0.data.publish_date',
         p0 => v_id,
         p_values => j
     );
-    v_publishers := APEX_JSON.GET_T_VARCHAR2 (
-        p_path => 'records.%0.details.details.publishers',
+    v_title := APEX_JSON.GET_VARCHAR2 (
+      p_path => 'records.%0.data.title',
+      p0 => v_id,
+      p_values => j
+    );
+    v_publisher := APEX_JSON.GET_VARCHAR2 (
+        p_path => 'records.%0.data.publishers[1].name',
         p0 => v_id,
         p_values => j
     );
-    
+    v_author := APEX_JSON.GET_VARCHAR2 (
+        p_path => 'records.%0.data.authors[1].name',
+        p0 => v_id,
+        p_values => j
+    );
+    v_lang := APEX_JSON.GET_VARCHAR2 (
+      p_path => 'records.%0.details.details.languages[1].key',
+      p0 => v_id,
+      p_values => j
+    );
     IF v_year IS NOT NULL THEN
-        
-        FOR i IN v_year.FIRST .. v_year.LAST 
-        LOOP 
-            update books
-              set YEAR=SUBSTR(v_year(i),-4)
-            where ISBN=pi_isbn;
-        END LOOP;
+      update books
+        set YEAR=SUBSTR(v_year,-4)
+      where ISBN=pi_isbn;
     END IF;
-    IF v_publishers IS NOT NULL THEN
-        FOR i IN v_publishers.FIRST .. v_publishers.LAST 
-        LOOP 
-            update books
-              set PUBLISHER=v_publishers(i)
-            where ISBN=pi_isbn;
-        END LOOP;
+    IF v_title IS NOT NULL THEN
+      update books
+        set TITLE=v_title
+      where ISBN=pi_isbn;
+    END IF;
+    IF v_author IS NOT NULL THEN
+      update books
+        set AUTHOR=v_author
+      where ISBN=pi_isbn;
+    END IF;
+    IF v_publisher IS NOT NULL THEN
+      update books
+        set PUBLISHER=v_publisher
+      where ISBN=pi_isbn;
+    END IF;
+    IF v_lang = '/languages/pol' then
+      update books
+        set LANGUAGE='polski'
+      where ISBN=pi_isbn;
+      elsif v_lang = '/languages/eng' then
+        update books
+        set LANGUAGE='angielski'
+      where ISBN=pi_isbn;
+      else update books
+        set LANGUAGE=v_lang
+      where ISBN=pi_isbn;
     END IF;
     IF v_cover IS NOT NULL THEN
-            update books
-              set COVER=v_cover, MIME_TYPE='image/jpeg'
-            where ISBN=pi_isbn;
+      update books
+        set COVER=v_cover, MIME_TYPE='image/jpeg'
+      where ISBN=pi_isbn;
     END IF;
   logger.log('END', v_scope);
   exception
