@@ -1,6 +1,28 @@
 create or replace package body pkg_backups
 as
   gc_scope_prefix constant varchar2(31) := lower('pkg_backups') || '.';
+  TYPE locations_table_type IS TABLE OF LOCATIONS%ROWTYPE;
+  TYPE temp_files_type IS TABLE OF MY_TEMP_FILES%ROWTYPE;
+  TYPE lending_table_type IS TABLE OF BOOK_LENDING%ROWTYPE;
+  TYPE history_table_type IS TABLE OF HISTORY%ROWTYPE;
+  TYPE genres_table_type IS TABLE OF BOOK_GENRES%ROWTYPE;
+  TYPE actions_table_type IS TABLE OF ACTIONS%ROWTYPE;
+  TYPE books_record_type IS RECORD (
+  id           books.id%TYPE,
+  title        books.title%TYPE,
+  author       books.author%TYPE,
+  isbn         books.isbn%TYPE,
+  year         books.year%TYPE,
+  genre_id     books.genre_id%TYPE,
+  location_id  books.location_id%TYPE,
+  score        books.score%TYPE,
+  description  books.description%TYPE,
+  MIME_TYPE    books.MIME_TYPE%TYPE,
+  FILE_NAME    books.FILE_NAME%TYPE,
+  deleted      books.DELETED%TYPE,
+  publisher    books.PUBLISHER%TYPE,
+  language     books.LANGUAGE%TYPE);
+TYPE books_table_type IS TABLE OF books_record_type;
 
 
 PROCEDURE p_genres_export 
@@ -450,44 +472,45 @@ procedure p_restore_locations
   as
     v_scope logger_logs.scope%type := gc_scope_prefix || 'p_restore_locations';
     v_params logger.tab_param;
-
+    v_locations_backup locations_table_type;
+    
   begin
     logger.log('START', v_scope, null, v_params);
 
-    for i in (
-      select c001, c002
-      FROM APEX_collections
-      WHERE collection_name = 'LOCATIONS_BACKUP' 
-    )
-    loop
-      insert into LOCATIONS (ID, NAME)
-      values (i.c001, i.c002);
-    end loop;
+    select c001, c002
+    BULK COLLECT INTO v_locations_backup
+    FROM APEX_collections
+    WHERE collection_name = 'LOCATIONS_BACKUP'; 
+      
+    FORALL i IN 1..v_locations_backup.COUNT
+    insert into LOCATIONS (ID, NAME)
+    values (v_locations_backup(i).ID, v_locations_backup(i).NAME);
 
     logger.log('Przywrócono locations.', v_scope);
-  exception
-    when others then
-      logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
-      raise;
-end p_restore_locations;
+    exception
+      when others then
+        logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
+        raise;
+  end p_restore_locations;
+
 
 procedure p_restore_lending
   as
     v_scope logger_logs.scope%type := gc_scope_prefix || 'p_restore_lending';
     v_params logger.tab_param;
+    v_lending_backup lending_table_type;
 
   begin
     logger.log('START', v_scope, null, v_params);
 
-    for i in (
-      select c001, c002, c003, c004, c005, c006
-      FROM APEX_collections
-      WHERE collection_name = 'LENDING_BACKUP' 
-    )
-    loop
-      insert into BOOK_LENDING (ID, BOOK_ID, START_DATE, END_DATE, PERSON, EMAIL)
-      values (i.c001, i.c002, i.c003, i.c004, i.c005, i.c006);
-    end loop;
+    select c001, c002, c003, c004, c005, c006
+    BULK COLLECT INTO v_lending_backup
+    FROM APEX_collections
+    WHERE collection_name = 'LENDING_BACKUP'; 
+    
+    FORALL i IN 1..v_lending_backup.COUNT
+    insert into BOOK_LENDING (ID, BOOK_ID, START_DATE, END_DATE, PERSON, EMAIL)
+    values (v_lending_backup(i).ID, v_lending_backup(i).BOOK_ID, v_lending_backup(i).START_DATE, v_lending_backup(i).END_DATE, v_lending_backup(i).PERSON, v_lending_backup(i).EMAIL);
 
     logger.log('Przywrócono lending.', v_scope);
   exception
@@ -500,82 +523,91 @@ procedure p_restore_history
   as
     v_scope logger_logs.scope%type := gc_scope_prefix || 'p_restore_history';
     v_params logger.tab_param;
-
+    v_history_backup history_table_type;
   begin
     logger.log('START', v_scope, null, v_params);
 
-    for i in (
-      select c001, c002, c003, c004, c005
-      FROM APEX_collections
-      WHERE collection_name = 'HISTORY_BACKUP' 
-    )
-    loop
-      insert into HISTORY (ID, ACTION_ID, BOOK_ID, USER_NAME, TIME)
-      values (i.c001, i.c002, i.c003, i.c004, i.c005);
-    end loop;
+    select c001, c002, c003, c004, c005
+    BULK COLLECT INTO v_history_backup
+    FROM APEX_collections
+    WHERE collection_name = 'HISTORY_BACKUP'; 
+    
+    FORALL i IN 1..v_history_backup.COUNT
+    insert into HISTORY (ID, ACTION_ID, BOOK_ID, USER_NAME, TIME)
+    values (v_history_backup(i).ID, v_history_backup(i).ACTION_ID, v_history_backup(i).BOOK_ID, v_history_backup(i).USER_NAME, v_history_backup(i).TIME);
+    
 
     logger.log('Przywrócono history.', v_scope);
-  exception
-    when others then
-      logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
-      raise;
+    exception
+      when others then
+        logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
+        raise;
 end p_restore_history;
 
 procedure p_restore_genres
   as
     v_scope logger_logs.scope%type := gc_scope_prefix || 'p_restore_genres';
     v_params logger.tab_param;
+    v_genres_backup genres_table_type;
 
   begin
     logger.log('START', v_scope, null, v_params);
 
-    for i in (
       select c001, c002
+      BULK COLLECT INTO v_genres_backup
       FROM APEX_collections
-      WHERE collection_name = 'GENRES_BACKUP' 
-    )
-    loop
+      WHERE collection_name = 'GENRES_BACKUP'; 
+      
+      FORALL i IN 1..v_genres_backup.COUNT
       insert into BOOK_GENRES (ID, NAME)
-      values (i.c001, i.c002);
-    end loop;
+      values (v_genres_backup(i).ID, v_genres_backup(i).NAME);
+      
 
-    logger.log('Przywrócono genres.', v_scope);
-  exception
-    when others then
-      logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
-      raise;
+      logger.log('Przywrócono genres.', v_scope);
+    exception
+      when others then
+        logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
+        raise;
 end p_restore_genres;
 
 procedure p_restore_books
   as
     v_scope logger_logs.scope%type := gc_scope_prefix || 'p_restore_books';
     v_params logger.tab_param;
-
+    v_books_backup books_table_type;
+    v_temp_files temp_files_type;
   begin
     logger.log('START', v_scope, null, v_params);
 
-    for i in (
-      select c001, c002, c003, c004, c005, c006, c007, c008, c009, c013
-      FROM APEX_collections
-      WHERE collection_name = 'BOOKS_BACKUP' 
-    )
-    loop
-      insert into BOOKS (ID, TITLE, AUTHOR, ISBN, YEAR, GENRE_ID, LOCATION_ID, SCORE, DESCRIPTION, DELETED)
-      values (i.c001, i.c002, i.c003, i.c004, i.c005, i.c006, i.c007, i.c008, i.c009, i.c013);
-    end loop;
-      for c in (
-        select * from MY_TEMP_FILES where FILE_NAME like 'covers/%'
-      )
-      loop
-        update BOOKS
-        set COVER = c.FILE_CONTENT,
-            MIME_TYPE = c.MIME_TYPE,
-            FILE_NAME = SUBSTR(c.FILE_NAME, 8)
-        where ID = TO_NUMBER(SUBSTR(SUBSTR(c.FILE_NAME, INSTR(c.FILE_NAME, '/') + 1), 1, INSTR(SUBSTR(c.FILE_NAME, INSTR(c.FILE_NAME, '/') + 1), '_') - 1));
-      end loop;
+    select c001, c002, c003, c004, c005, c006, c007, c008, c009, c011, c012, c013, c014, c015
+    BULK COLLECT INTO v_books_backup
+    FROM APEX_collections
+    WHERE collection_name = 'BOOKS_BACKUP'; 
+    
+    FORALL i IN 1..v_books_backup.COUNT
+    INSERT INTO BOOKS (ID, TITLE, AUTHOR, ISBN, YEAR, GENRE_ID, LOCATION_ID, SCORE, DESCRIPTION, MIME_TYPE, FILE_NAME, DELETED, PUBLISHER, LANGUAGE)
+    VALUES (
+      v_books_backup(i).ID, v_books_backup(i).TITLE, v_books_backup(i).AUTHOR,
+      v_books_backup(i).ISBN, v_books_backup(i).YEAR, v_books_backup(i).GENRE_ID,
+      v_books_backup(i).LOCATION_ID, v_books_backup(i).SCORE, v_books_backup(i).DESCRIPTION,
+      v_books_backup(i).MIME_TYPE, v_books_backup(i).FILE_NAME,
+      v_books_backup(i).DELETED, v_books_backup(i).PUBLISHER, v_books_backup(i).LANGUAGE
+      );
+
+    SELECT * 
+    BULK COLLECT INTO v_temp_files 
+    FROM MY_TEMP_FILES 
+    WHERE FILE_NAME LIKE 'covers/%';
+
+    FORALL i IN 1..v_temp_files.COUNT
+      UPDATE BOOKS
+      SET COVER = v_temp_files(i).FILE_CONTENT,
+          MIME_TYPE = v_temp_files(i).MIME_TYPE,
+          FILE_NAME = SUBSTR(v_temp_files(i).FILE_NAME, 8)
+          WHERE ID = TO_NUMBER(SUBSTR(SUBSTR(v_temp_files(i).FILE_NAME, INSTR(v_temp_files(i).FILE_NAME, '/') + 1), 1, INSTR(SUBSTR(v_temp_files(i).FILE_NAME, INSTR(v_temp_files(i).FILE_NAME, '/') + 1), '_') - 1));      
 
     logger.log('Przywrócono books.', v_scope);
-  exception
+    exception
     when others then
       logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
       raise;
@@ -585,23 +617,23 @@ procedure p_restore_actions
   as
     v_scope logger_logs.scope%type := gc_scope_prefix || 'p_restore_actions';
     v_params logger.tab_param;
-
+    v_actions_backup actions_table_type;
   begin
     logger.log('START', v_scope, null, v_params);
 
-    for i in (
-      select c001, c002
-      FROM APEX_collections
-      WHERE collection_name = 'ACTIONS_BACKUP' 
-    )
-    loop
-      insert into ACTIONS (ACTION, DESCRIPTION)
-      values (i.c001, i.c002);
-    end loop;
+    select c001, c002
+    BULK COLLECT INTO v_actions_backup
+    FROM APEX_collections
+    WHERE collection_name = 'ACTIONS_BACKUP'; 
+
+    FORALL i IN 1..v_actions_backup.COUNT
+    insert into ACTIONS (ACTION, DESCRIPTION)
+    values (v_actions_backup(i).ACTION, v_actions_backup(i).DESCRIPTION);
+
 
     logger.log('Przywrócono actions.', v_scope);
-  exception
-    when others then
+    exception
+      when others then
       logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
       raise;
 end p_restore_actions;
