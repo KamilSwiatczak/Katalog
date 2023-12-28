@@ -20,7 +20,9 @@ procedure p_book_create_update(
       pi_description in books.description%type,
       pi_cover in books.cover%type,
       pi_mime in books.MIME_TYPE%type,
-      pi_file_name in books.FILE_NAME%type
+      pi_file_name in books.FILE_NAME%type,
+      pi_publisher in BOOKS.PUBLISHER%type,
+      pi_language in BOOKS.LANGUAGE%type
   )
   as
     v_scope logger_logs.scope%type := gc_scope_prefix || 'p_book_create_update';
@@ -38,11 +40,13 @@ procedure p_book_create_update(
     logger.append_param(v_params, 'pi_description', pi_description);
     logger.append_param(v_params, 'pi_mime', pi_mime);
     logger.append_param(v_params, 'pi_file_name', pi_file_name);
+    logger.append_param(v_params, 'pi_publisher', pi_publisher);
+    logger.append_param(v_params, 'pi_language', pi_language);
     logger.log('START', v_scope, null, v_params);
 
     if pi_id is null then
-      INSERT INTO BOOKS (title, author, isbn, year, genre_id, location_id, score, description, cover, MIME_TYPE, FILE_NAME)
-      VALUES (pi_title, pi_author, pi_isbn, pi_year, pi_genre_id, pi_location_id, pi_score, pi_description, pi_cover, pi_mime, pi_file_name)
+      INSERT INTO BOOKS (title, author, isbn, year, genre_id, location_id, score, description, cover, MIME_TYPE, FILE_NAME, PUBLISHER, LANGUAGE)
+      VALUES (pi_title, pi_author, pi_isbn, pi_year, pi_genre_id, pi_location_id, pi_score, pi_description, pi_cover, pi_mime, pi_file_name, pi_publisher, pi_language)
       returning id into v_id;
       pkg_history.p_history_log(pi_action => 'NEW', pi_book_id => v_id);
       logger.log('Książka '||pi_title||' została dodana.', v_scope);
@@ -55,6 +59,8 @@ procedure p_book_create_update(
               location_id=pi_location_id,
               score=pi_score,
               description=pi_description,
+              PUBLISHER=pi_publisher,
+              LANGUAGE=pi_language,
               cover=nvl(pi_cover, cover),
               mime_type=nvl(pi_mime, mime_type),
               file_name=nvl(pi_file_name, file_name)

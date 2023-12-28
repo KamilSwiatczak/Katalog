@@ -15,7 +15,9 @@ procedure p_book_create_update(
   pi_description in books.description%type,
   pi_cover in books.cover%type,
   pi_mime in books.MIME_TYPE%type,
-  pi_file_name in books.FILE_NAME%type
+  pi_file_name in books.FILE_NAME%type,
+  pi_publisher in BOOKS.PUBLISHER%type,
+  pi_language in BOOKS.LANGUAGE%type
 );
 
 procedure p_data_export;
