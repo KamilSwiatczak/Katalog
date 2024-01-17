@@ -23,6 +23,15 @@ procedure p_restore_history;
 procedure p_restore_genres;
 procedure p_restore_actions;
 procedure p_restore_books;
+procedure p_add_external_file(
+  pi_backup backups.backup%type,
+  pi_mime_type backups.mime_type%type
+  );
+procedure p_remove_backup(
+  pi_id in backups.id%type
+);
+
+  
 
 end pkg_backups;
 /

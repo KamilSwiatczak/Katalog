@@ -11,3 +11,5 @@ prompt ..packages
 @@..\DB\PACKAGES_BODY\pkg_history.pkb;
 @@..\DB\PACKAGES\pkg_backups.pks;
 @@..\DB\PACKAGES_BODY\pkg_backups.pkb;
+@@..\DB\PACKAGES\pkg_wishlist.pks;
+@@..\DB\PACKAGES_BODY\pkg_wishlist.pkb;

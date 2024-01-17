@@ -638,5 +638,54 @@ procedure p_restore_actions
       raise;
 end p_restore_actions;
 
+
+procedure p_add_external_file(
+    pi_backup backups.backup%type,
+    pi_mime_type backups.mime_type%type
+    )
+  as
+    v_scope logger_logs.scope%type := gc_scope_prefix || 'p_add_external_file';
+    v_params logger.tab_param;
+  
+  begin
+    logger.append_param(v_params, 'pi_zip_file', length(pi_backup));
+    logger.append_param(v_params, 'pi_zip_file', pi_mime_type);
+    logger.log('START', v_scope, null, v_params);
+  
+  
+    insert into backups (user_name, time, backup, mime_type, file_name)
+    values (apex_custom_auth.get_username, LOCALTIMESTAMP, pi_backup, pi_mime_type, 'external_backup_'||LOCALTIMESTAMP||'.zip');
+  
+    logger.log('END', v_scope);
+  exception
+    when others then
+      logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
+      raise;
+  end p_add_external_file;
+
+
+procedure p_remove_backup(
+    pi_id in backups.id%type
+  )
+  as
+    v_scope logger_logs.scope%type := gc_scope_prefix || 'p_remove_backup';
+    v_params logger.tab_param;
+
+  begin
+    logger.append_param(v_params, 'pi_id', pi_id);
+    logger.log('START', v_scope, null, v_params);
+
+        DELETE FROM backups 
+        WHERE ID=pi_id;
+
+    logger.log('END', v_scope);
+  exception
+    when others then
+      logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
+      raise;
+  end p_remove_backup;
+
+  
+
 end pkg_backups;
 /
