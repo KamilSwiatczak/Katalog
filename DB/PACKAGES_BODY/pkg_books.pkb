@@ -214,8 +214,8 @@ procedure p_openlibrary_api(
   begin
     logger.append_param(v_params, 'pi_isbn', pi_isbn);
     logger.log('START', v_scope, null, v_params);
-    v_url := 'https://openlibrary.org/api/volumes/brief/isbn/'||pi_isbn||'.json';
-    v_cover_url := 'https://covers.openlibrary.org/b/isbn/'||pi_isbn||'-S.jpg'; 
+    v_url := 'https://openlibrary.org/api/volumes/brief/isbn/'||TO_CHAR(pi_isbn)||'.json';
+    v_cover_url := 'https://covers.openlibrary.org/b/isbn/'||TO_CHAR(pi_isbn)||'-S.jpg'; 
     v_response := APEX_WEB_SERVICE.MAKE_REST_REQUEST(
         p_url => v_url,
         p_http_method => 'GET'

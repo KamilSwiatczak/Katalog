@@ -7,6 +7,8 @@ as
   TYPE history_table_type IS TABLE OF HISTORY%ROWTYPE;
   TYPE genres_table_type IS TABLE OF BOOK_GENRES%ROWTYPE;
   TYPE actions_table_type IS TABLE OF ACTIONS%ROWTYPE;
+  TYPE wishlist_books_table_type IS TABLE OF WISHLIST_BOOKS%ROWTYPE;
+  TYPE wishlist_prices_table_type IS TABLE OF WISHLIST_PRICES%ROWTYPE;
   TYPE books_record_type IS RECORD (
   id           books.id%TYPE,
   title        books.title%TYPE,
@@ -283,8 +285,68 @@ PROCEDURE p_history_export as
         raise;
 END p_history_export;
 
+PROCEDURE p_wishlist_books_export as
+    v_scope logger_logs.scope%type := gc_scope_prefix || 'p_wishlist_books_export';
+    v_params logger.tab_param;
+    v_context apex_exec.t_context;
+    v_export  apex_data_export.t_export;
+  BEGIN
+    logger.log('START', v_scope, null, v_params);
+    v_context := apex_exec.open_query_context(
+        p_location    => apex_exec.c_location_local_db,
+        p_sql_query   => 'select * from wishlist_books');
+
+    v_export := apex_data_export.export (
+                    p_context   => v_context,
+                    p_format    => apex_data_export.c_format_xlsx,
+                    p_file_name => 'wishlist_books/wishlist_books_backup');
+
+    apex_exec.close( v_context );
+    
+    insert into my_temp_files (file_name, file_content, mime_type)
+    values (v_export.file_name, v_export.content_blob, v_export.mime_type);
+
+    logger.log('Eksportowano wishlist_books', v_scope);
+
+  EXCEPTION
+    when others THEN
+        logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
+        raise;
+        apex_exec.close( v_context );
+        raise;
+END p_wishlist_books_export;
 
 
+PROCEDURE p_wishlist_prices_export as
+    v_scope logger_logs.scope%type := gc_scope_prefix || 'p_wishlist_prices_export';
+    v_params logger.tab_param;
+    v_context apex_exec.t_context;
+    v_export  apex_data_export.t_export;
+  BEGIN
+    logger.log('START', v_scope, null, v_params);
+    v_context := apex_exec.open_query_context(
+        p_location    => apex_exec.c_location_local_db,
+        p_sql_query   => 'select * from wishlist_prices');
+
+    v_export := apex_data_export.export (
+                    p_context   => v_context,
+                    p_format    => apex_data_export.c_format_xlsx,
+                    p_file_name => 'wishlist_prices/wishlist_prices_backup');
+
+    apex_exec.close( v_context );
+    
+    insert into my_temp_files (file_name, file_content, mime_type)
+    values (v_export.file_name, v_export.content_blob, v_export.mime_type);
+
+    logger.log('Eksportowano wishlist_prices', v_scope);
+
+  EXCEPTION
+    when others THEN
+        logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
+        raise;
+        apex_exec.close( v_context );
+        raise;
+END p_wishlist_prices_export;
 
 procedure p_zip_backup
   as
@@ -300,6 +362,8 @@ procedure p_zip_backup
     pkg_backups.p_lending_export;
     pkg_backups.p_history_export;
     pkg_backups.p_actions_export;
+    pkg_backups.p_wishlist_books_export;
+    pkg_backups.p_wishlist_prices_export;
     for i in (select file_name, file_content
                   from MY_TEMP_FILES)
       loop
@@ -383,7 +447,8 @@ procedure p_RESTORE_FROM_EXISTING_BACKUP(
     delete from LOCATIONS;
     delete from BOOK_GENRES;
     delete from ACTIONS;
-
+    delete from WISHLIST_BOOKS;
+    delete from WISHLIST_PRICES;
     
     p_restore_locations;
     p_restore_genres;
@@ -391,7 +456,9 @@ procedure p_RESTORE_FROM_EXISTING_BACKUP(
     p_restore_books;
     p_restore_lending;
     p_restore_history;
-    
+    p_restore_wishlist_books;
+    p_restore_wishlist_prices;
+
     delete from MY_TEMP_FILES;
 
     APEX_COLLECTION.TRUNCATE_COLLECTION(
@@ -406,7 +473,10 @@ procedure p_RESTORE_FROM_EXISTING_BACKUP(
     p_collection_name => 'LENDING_BACKUP');
     APEX_COLLECTION.TRUNCATE_COLLECTION(
     p_collection_name => 'HISTORY_BACKUP');
-    
+    APEX_COLLECTION.TRUNCATE_COLLECTION(
+    p_collection_name => 'WISHLIST_BOOKS_BACKUP');
+    APEX_COLLECTION.TRUNCATE_COLLECTION(
+    p_collection_name => 'WISHLIST_PRICES_BACKUP');    
     logger.log('END', v_scope);
   exception
     when others then
@@ -638,6 +708,55 @@ procedure p_restore_actions
       raise;
 end p_restore_actions;
 
+procedure p_restore_wishlist_books
+  as
+    v_scope logger_logs.scope%type := gc_scope_prefix || 'p_restore_wishlist_books';
+    v_params logger.tab_param;
+    v_wishlist_books_backup wishlist_books_table_type;
+  begin
+    logger.log('START', v_scope, null, v_params);
+
+    select c001, c002, c003, c004, c005
+    BULK COLLECT INTO v_wishlist_books_backup
+    FROM APEX_collections
+    WHERE collection_name = 'WISHLIST_BOOKS_BACKUP'; 
+
+    FORALL i IN 1..v_wishlist_books_backup.COUNT
+    insert into WISHLIST_BOOKS (ID, TITLE, AUTHOR, ISBN, LINK)
+    values (v_wishlist_books_backup(i).ID, v_wishlist_books_backup(i).TITLE, v_wishlist_books_backup(i).AUTHOR, v_wishlist_books_backup(i).ISBN, v_wishlist_books_backup(i).LINK);
+
+
+    logger.log('Przywrócono wishlist_books.', v_scope);
+    exception
+      when others then
+      logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
+      raise;
+end p_restore_wishlist_books;
+
+procedure p_restore_wishlist_prices
+  as
+    v_scope logger_logs.scope%type := gc_scope_prefix || 'p_restore_wishlist_prices';
+    v_params logger.tab_param;
+    v_wishlist_prices_backup wishlist_prices_table_type;
+  begin
+    logger.log('START', v_scope, null, v_params);
+
+    select c001, c002, c003, c004
+    BULK COLLECT INTO v_wishlist_prices_backup
+    FROM APEX_collections
+    WHERE collection_name = 'WISHLIST_PRICES_BACKUP'; 
+
+    FORALL i IN 1..v_wishlist_prices_backup.COUNT
+    insert into WISHLIST_PRICES (ID, WISHBOOK_ID, PRICE, TIME)
+    values (v_wishlist_prices_backup(i).ID, v_wishlist_prices_backup(i).WISHBOOK_ID, v_wishlist_prices_backup(i).PRICE, v_wishlist_prices_backup(i).TIME);
+
+
+    logger.log('Przywrócono wishlist_prices.', v_scope);
+    exception
+      when others then
+      logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
+      raise;
+end p_restore_wishlist_prices;
 
 procedure p_add_external_file(
     pi_backup backups.backup%type,
@@ -648,8 +767,8 @@ procedure p_add_external_file(
     v_params logger.tab_param;
   
   begin
-    logger.append_param(v_params, 'pi_zip_file', length(pi_backup));
-    logger.append_param(v_params, 'pi_zip_file', pi_mime_type);
+    logger.append_param(v_params, 'pi_backup', length(pi_backup));
+    logger.append_param(v_params, 'pi_mime_type', pi_mime_type);
     logger.log('START', v_scope, null, v_params);
   
   

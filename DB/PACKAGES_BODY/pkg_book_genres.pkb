@@ -13,7 +13,7 @@ is
   v_params logger.tab_param;
   v_id books.id%type;
 begin
-  logger.append_param(v_params, 'p_name', pi_name);
+  logger.append_param(v_params, 'pi_name', pi_name);
   logger.log('START', v_scope, null, v_params);
   INSERT INTO BOOK_GENRES (name)
     VALUES (pi_name)
