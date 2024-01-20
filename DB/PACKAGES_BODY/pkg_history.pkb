@@ -1,4 +1,3 @@
-
 create or replace package body pkg_history
 as
 
@@ -23,7 +22,7 @@ begin
   select count(*) 
   into v_count
   from actions
-  where pi_action = action;
+  where action = pi_action;
   if v_count = 1 then 
     v_return := true;
   else
@@ -41,7 +40,9 @@ end f_action_verify;
 
 procedure p_history_log(
   pi_action in history.action_id%type,
-  pi_book_id in history.book_id%type
+  pi_book_id in history.book_id%type,
+  pi_wishbook_id in history.wishbook_id%type,
+  pi_section in history.section%type
   )
 as
   v_scope logger_logs.scope%type := gc_scope_prefix || 'p_history_log';
@@ -53,8 +54,8 @@ begin
   logger.append_param(v_params, 'pi_book_id', pi_book_id);
   logger.log('START', v_scope, null, v_params);
   if f_action_verify(pi_action) then
-    INSERT INTO history (action_id, book_id, user_name, time)
-    VALUES (pi_action, pi_book_id, apex_custom_auth.get_username, LOCALTIMESTAMP);
+    INSERT INTO history (action_id, book_id, user_name, time, wishbook_id, section)
+    VALUES (pi_action, pi_book_id, apex_custom_auth.get_username, LOCALTIMESTAMP, pi_wishbook_id, pi_section);
   else 
     RAISE_APPLICATION_ERROR(-20006, 'Błędna akcja'); 
   end if;

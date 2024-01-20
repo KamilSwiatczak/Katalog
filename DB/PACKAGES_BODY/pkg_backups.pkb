@@ -597,14 +597,14 @@ procedure p_restore_history
   begin
     logger.log('START', v_scope, null, v_params);
 
-    select c001, c002, c003, c004, c005
+    select c001, c002, c003, c004, c005, c006, c007
     BULK COLLECT INTO v_history_backup
     FROM APEX_collections
     WHERE collection_name = 'HISTORY_BACKUP'; 
     
     FORALL i IN 1..v_history_backup.COUNT
-    insert into HISTORY (ID, ACTION_ID, BOOK_ID, USER_NAME, TIME)
-    values (v_history_backup(i).ID, v_history_backup(i).ACTION_ID, v_history_backup(i).BOOK_ID, v_history_backup(i).USER_NAME, v_history_backup(i).TIME);
+    insert into HISTORY (ID, ACTION_ID, BOOK_ID, USER_NAME, TIME, WISHBOOK_ID, SECTION)
+    values (v_history_backup(i).ID, v_history_backup(i).ACTION_ID, v_history_backup(i).BOOK_ID, v_history_backup(i).USER_NAME, v_history_backup(i).TIME, v_history_backup(i).wishbook_id, v_history_backup(i).section);
     
 
     logger.log('Przywrócono history.', v_scope);

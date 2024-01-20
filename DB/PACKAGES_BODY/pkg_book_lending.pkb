@@ -27,7 +27,7 @@ begin
 
   insert into book_lending (book_id, person, start_date, email)
   values (pi_book_id, pi_person, pi_date, pi_email);
-  pkg_history.p_history_log(pi_action => 'LEND', pi_book_id => pi_book_id);
+  pkg_history.p_history_log(pi_action => 'LEND', pi_book_id => pi_book_id, pi_wishbook_id => null, pi_section => 'LIBRARY_BOOKS');
   logger.log('Książka wypożyczona', v_scope);
 exception
   when others then
@@ -66,7 +66,7 @@ begin
     IF SQL%ROWCOUNT = 0 THEN
       raise_application_error(-20002, 'Ta książka jest zwrócona');
     ELSE
-      pkg_history.p_history_log(pi_action => 'RETURN', pi_book_id => pi_book_id);
+      pkg_history.p_history_log(pi_action => 'RETURN', pi_book_id => pi_book_id, pi_wishbook_id => null, pi_section => 'LIBRARY_BOOKS');
     END IF;
   END IF;
 

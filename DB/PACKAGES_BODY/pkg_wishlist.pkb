@@ -17,7 +17,7 @@ begin
 
       DELETE FROM wishlist_books 
       WHERE ID=pi_id;
-  pkg_history.p_history_log(pi_action => 'REMOVE_WISHLIST_BOOK', pi_book_id => pi_id);
+  pkg_history.p_history_log(pi_action => 'REMOVE_WISHLIST_BOOK', pi_wishbook_id => pi_id, pi_book_id => null, pi_section => 'WISHLIST_BOOKS');
   logger.log('END', v_scope);
 exception
   when others then
@@ -39,7 +39,7 @@ begin
 
       DELETE FROM wishlist_prices 
       WHERE ID=pi_id;
-  pkg_history.p_history_log(pi_action => 'REMOVE_WISHLISTPRICE', pi_book_id => pi_id);
+  pkg_history.p_history_log(pi_action => 'REMOVE_WISHLISTPRICE', pi_wishbook_id => pi_id, pi_book_id => null, pi_section => 'WISHLIST_BOOKS');
   logger.log('END', v_scope);
 exception
   when others then
@@ -70,7 +70,7 @@ procedure p_wishlist_books_create_update(
       INSERT INTO wishlist_books (title, author, isbn, link)
       VALUES (pi_title, pi_author, pi_isbn, pi_link)
       returning id into v_id;
-      pkg_history.p_history_log(pi_action => 'NEW_WISHLIST_BOOK', pi_book_id => v_id);
+      pkg_history.p_history_log(pi_action => 'NEW_WISHLIST_BOOK', pi_wishbook_id => v_id, pi_book_id => null, pi_section => 'WISHLIST_BOOKS');
       logger.log('Książka '||pi_title||' została dodana do listy życzeń.', v_scope);
     else update wishlist_books
           set title=pi_title,
@@ -78,7 +78,7 @@ procedure p_wishlist_books_create_update(
               isbn=pi_isbn,
               link=pi_link
           where ID = pi_id;
-          pkg_history.p_history_log(pi_action => 'EDIT_WISHLIST_BOOK', pi_book_id => pi_id);
+          pkg_history.p_history_log(pi_action => 'EDIT_WISHLIST_BOOK', pi_wishbook_id => pi_id, pi_book_id => null, pi_section => 'WISHLIST_BOOKS');
           logger.log('Książka '||pi_title||' z listy życzeń została edytowana.', v_scope);
     end if;
   logger.log('END', v_scope);
@@ -106,15 +106,15 @@ procedure p_wishlist_prices_create_update(
     if pi_id is null then
       INSERT INTO wishlist_prices (wishbook_id, price, time)
       VALUES (pi_wishbook_id, pi_price, LOCALTIMESTAMP);
-      pkg_history.p_history_log(pi_action => 'NEW_WISHLIST_PRICE', pi_book_id => pi_wishbook_id);
-      logger.log('Cena '||pi_id||' została dodana.', v_scope);
+      pkg_history.p_history_log(pi_action => 'NEW_WISHLIST_PRICE', pi_wishbook_id => pi_wishbook_id, pi_book_id => null, pi_section => 'WISHLIST_BOOKS');
+      logger.log('Cena '||pi_wishbook_id||' została dodana.', v_scope);
     else update wishlist_prices
           set wishbook_id=pi_wishbook_id,
               price=pi_price,
               time=LOCALTIMESTAMP
           where ID = pi_id;
-          pkg_history.p_history_log(pi_action => 'EDIT_WISHLIST_PRICE', pi_book_id => pi_wishbook_id);
-          logger.log('Cena '||pi_id||' została edytowana.', v_scope);
+          pkg_history.p_history_log(pi_action => 'EDIT_WISHLIST_PRICE', pi_wishbook_id => pi_wishbook_id, pi_book_id => null, pi_section => 'WISHLIST_BOOKS');
+          logger.log('Cena '||pi_wishbook_id||' została edytowana.', v_scope);
     end if;
   logger.log('END', v_scope);
   exception

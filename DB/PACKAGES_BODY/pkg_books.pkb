@@ -48,7 +48,7 @@ procedure p_book_create_update(
       INSERT INTO BOOKS (title, author, isbn, year, genre_id, location_id, score, description, cover, MIME_TYPE, FILE_NAME, PUBLISHER, LANGUAGE)
       VALUES (pi_title, pi_author, pi_isbn, pi_year, pi_genre_id, pi_location_id, pi_score, pi_description, pi_cover, pi_mime, pi_file_name, pi_publisher, pi_language)
       returning id into v_id;
-      pkg_history.p_history_log(pi_action => 'NEW', pi_book_id => v_id);
+      pkg_history.p_history_log(pi_action => 'NEW', pi_book_id => v_id, pi_wishbook_id => null, pi_section => 'LIBRARY_BOOKS');
       logger.log('Książka '||pi_title||' została dodana.', v_scope);
     else update books
           set title=pi_title,
@@ -65,7 +65,7 @@ procedure p_book_create_update(
               mime_type=nvl(pi_mime, mime_type),
               file_name=nvl(pi_file_name, file_name)
           where ID = pi_id;
-          pkg_history.p_history_log(pi_action => 'UPDATE', pi_book_id => pi_id);
+          pkg_history.p_history_log(pi_action => 'UPDATE', pi_book_id => pi_id, pi_wishbook_id => null, pi_section => 'LIBRARY_BOOKS');
           logger.log('Książka '||pi_title||' została edytowana.', v_scope);
     end if;
   logger.log('END', v_scope);
@@ -143,7 +143,7 @@ procedure p_delete_book(
       set DELETED ='Y'
       where ID = pi_id;
 
-      pkg_history.p_history_log(pi_action => 'DELETE', pi_book_id => pi_id);
+      pkg_history.p_history_log(pi_action => 'DELETE', pi_book_id => pi_id, pi_wishbook_id => null, pi_section => 'LIBRARY_BOOKS');
     end if;
     
     logger.log('Książka usunięta.', v_scope);
@@ -176,7 +176,7 @@ procedure p_restore_book(
       set DELETED ='N'
       where id = pi_id;
   
-      pkg_history.p_history_log(pi_action => 'RESTORE', pi_book_id => pi_id);
+      pkg_history.p_history_log(pi_action => 'RESTORE', pi_book_id => pi_id, pi_wishbook_id => null, pi_section => 'LIBRARY_BOOKS');
       logger.log('Książka przywrócona', v_scope);
     else 
       RAISE_APPLICATION_ERROR(-20006, 'Książka nie była usunięta.');
