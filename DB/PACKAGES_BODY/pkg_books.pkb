@@ -38,6 +38,7 @@ procedure p_book_create_update(
     logger.append_param(v_params, 'pi_location_id', pi_location_id);
     logger.append_param(v_params, 'pi_score', pi_score);
     logger.append_param(v_params, 'pi_description', pi_description);
+    logger.append_param(v_params, 'pi_cover', length(pi_cover));
     logger.append_param(v_params, 'pi_mime', pi_mime);
     logger.append_param(v_params, 'pi_file_name', pi_file_name);
     logger.append_param(v_params, 'pi_publisher', pi_publisher);
@@ -214,8 +215,8 @@ procedure p_openlibrary_api(
   begin
     logger.append_param(v_params, 'pi_isbn', pi_isbn);
     logger.log('START', v_scope, null, v_params);
-    v_url := 'https://openlibrary.org/api/volumes/brief/isbn/'||TO_CHAR(pi_isbn)||'.json';
-    v_cover_url := 'https://covers.openlibrary.org/b/isbn/'||TO_CHAR(pi_isbn)||'-S.jpg'; 
+    v_url := 'https://openlibrary.org/api/volumes/brief/isbn/'||pi_isbn||'.json';
+    v_cover_url := 'https://covers.openlibrary.org/b/isbn/'||pi_isbn||'-S.jpg'; 
     v_response := APEX_WEB_SERVICE.MAKE_REST_REQUEST(
         p_url => v_url,
         p_http_method => 'GET'
@@ -303,7 +304,94 @@ procedure p_openlibrary_api(
 
 end p_openlibrary_api;
 
+procedure p_openlibrary_api_insert(
+    pi_isbn in books.isbn%type,
+    po_year out books.year%type,
+    po_title out books.title%type,
+    po_author out books.author%type,
+    po_publisher out books.publisher%type,
+    po_language out books.language%type,
+    po_cover out books.cover%type,
+    po_mime_type out books.mime_type%type
+)
+as
+    v_scope logger_logs.scope%type := gc_scope_prefix || 'p_openlibrary_api_insert';
+    v_params logger.tab_param;
+    v_url VARCHAR2(4000);
+    v_cover_url VARCHAR2(4000);
+    v_response CLOB;
+    v_cover BLOB;
+    j apex_json.t_values;
+    v_id varchar2(200);
+    v_members apex_t_varchar2;
 
+begin
+    logger.append_param(v_params, 'pi_isbn', pi_isbn);
+    logger.log('START', v_scope, null, v_params);
+    v_url := 'https://openlibrary.org/api/volumes/brief/isbn/'||pi_isbn||'.json';
+    v_cover_url := 'https://covers.openlibrary.org/b/isbn/'||pi_isbn||'-S.jpg'; 
+    v_response := APEX_WEB_SERVICE.MAKE_REST_REQUEST(
+        p_url => v_url,
+        p_http_method => 'GET'
+    );
+    v_cover := APEX_WEB_SERVICE.MAKE_REST_REQUEST_B(
+        p_url => v_cover_url,
+        p_http_method => 'GET'
+    );
+    apex_json.parse(j, v_response);
+    
+    v_members := apex_json.GET_MEMBERS (
+        p_values => j,
+        p_path => 'records'
+    );
+    
+    v_id := v_members(1);
+    
+    po_year := APEX_JSON.GET_VARCHAR2 (
+        p_path => 'records.%0.data.publish_date',
+        p0 => v_id,
+        p_values => j
+    );
+    po_title := APEX_JSON.GET_VARCHAR2 (
+      p_path => 'records.%0.data.title',
+      p0 => v_id,
+      p_values => j
+    );
+    po_publisher := APEX_JSON.GET_VARCHAR2 (
+        p_path => 'records.%0.data.publishers[1].name',
+        p0 => v_id,
+        p_values => j
+    );
+    po_author := APEX_JSON.GET_VARCHAR2 (
+        p_path => 'records.%0.data.authors[1].name',
+        p0 => v_id,
+        p_values => j
+    );
+    po_language := APEX_JSON.GET_VARCHAR2 (
+      p_path => 'records.%0.details.details.languages[1].key',
+      p0 => v_id,
+      p_values => j
+    );
+    
+    IF po_year IS NOT NULL THEN
+        po_year := SUBSTR(po_year, -4);
+    END IF;
+
+    IF po_language = '/languages/pol' THEN
+        po_language := 'polski';
+    ELSIF po_language = '/languages/eng' THEN
+        po_language := 'angielski';
+    END IF;
+
+    po_cover := v_cover;
+    po_mime_type := 'image/jpeg';
+
+    logger.log('END', v_scope);
+exception
+    when others then
+        logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
+        raise;
+end p_openlibrary_api_insert;
   
     
 

@@ -9,6 +9,7 @@ as
   TYPE actions_table_type IS TABLE OF ACTIONS%ROWTYPE;
   TYPE wishlist_books_table_type IS TABLE OF WISHLIST_BOOKS%ROWTYPE;
   TYPE wishlist_prices_table_type IS TABLE OF WISHLIST_PRICES%ROWTYPE;
+  TYPE sections_table_type IS TABLE OF SECTIONS%ROWTYPE;
   TYPE books_record_type IS RECORD (
   id           books.id%TYPE,
   title        books.title%TYPE,
@@ -163,7 +164,37 @@ PROCEDURE p_location_export as
         raise;
 END p_location_export;    
 
+PROCEDURE p_sections_export 
+  as
+    v_scope logger_logs.scope%type := gc_scope_prefix || 'p_sections_export';
+    v_params logger.tab_param;
+    v_context apex_exec.t_context;
+    v_export  apex_data_export.t_export;
+  BEGIN
+    logger.log('START', v_scope, null, v_params);
+    v_context := apex_exec.open_query_context(
+        p_location    => apex_exec.c_location_local_db,
+        p_sql_query   => 'select * from sections');
 
+    v_export := apex_data_export.export (
+                    p_context   => v_context,
+                    p_format    => apex_data_export.c_format_xlsx,
+                    p_file_name => 'genres/sections_backup');
+
+    apex_exec.close( v_context );
+    
+    insert into my_temp_files (file_name, file_content, mime_type)
+    values (v_export.file_name, v_export.content_blob, v_export.mime_type);
+
+    logger.log('Eksportowano sections', v_scope);
+
+  EXCEPTION
+    when others THEN
+        logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
+        raise;
+        apex_exec.close( v_context );
+        raise;
+END p_sections_export; 
 
 
 PROCEDURE p_books_export as
@@ -364,6 +395,8 @@ procedure p_zip_backup
     pkg_backups.p_actions_export;
     pkg_backups.p_wishlist_books_export;
     pkg_backups.p_wishlist_prices_export;
+    pkg_backups.p_sections_export;
+
     for i in (select file_name, file_content
                   from MY_TEMP_FILES)
       loop
@@ -447,9 +480,11 @@ procedure p_RESTORE_FROM_EXISTING_BACKUP(
     delete from LOCATIONS;
     delete from BOOK_GENRES;
     delete from ACTIONS;
-    delete from WISHLIST_BOOKS;
     delete from WISHLIST_PRICES;
+    delete from WISHLIST_BOOKS;
+    delete from SECTIONS;
     
+    p_restore_sections;
     p_restore_locations;
     p_restore_genres;
     p_restore_actions;
@@ -476,7 +511,9 @@ procedure p_RESTORE_FROM_EXISTING_BACKUP(
     APEX_COLLECTION.TRUNCATE_COLLECTION(
     p_collection_name => 'WISHLIST_BOOKS_BACKUP');
     APEX_COLLECTION.TRUNCATE_COLLECTION(
-    p_collection_name => 'WISHLIST_PRICES_BACKUP');    
+    p_collection_name => 'WISHLIST_PRICES_BACKUP');
+    APEX_COLLECTION.TRUNCATE_COLLECTION(
+    p_collection_name => 'SECTIONS_BACKUP');   
     logger.log('END', v_scope);
   exception
     when others then
@@ -562,6 +599,32 @@ procedure p_restore_locations
         logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
         raise;
   end p_restore_locations;
+
+
+procedure p_restore_sections
+  as
+    v_scope logger_logs.scope%type := gc_scope_prefix || 'p_restore_sections';
+    v_params logger.tab_param;
+    v_sections_backup sections_table_type;
+    
+  begin
+    logger.log('START', v_scope, null, v_params);
+
+    select c001, c002
+    BULK COLLECT INTO v_sections_backup
+    FROM APEX_collections
+    WHERE collection_name = 'SECTIONS_BACKUP'; 
+      
+    FORALL i IN 1..v_sections_backup.COUNT
+    insert into SECTIONS (SECTION, DESCRIPTION)
+    values (v_sections_backup(i).SECTION, v_sections_backup(i).DESCRIPTION);
+
+    logger.log('Przywrócono sections.', v_scope);
+    exception
+      when others then
+        logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
+        raise;
+  end p_restore_sections;
 
 
 procedure p_restore_lending

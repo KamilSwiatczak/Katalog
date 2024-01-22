@@ -11,6 +11,7 @@ procedure p_history_export;
 procedure p_actions_export;
 procedure p_wishlist_books_export;
 procedure p_wishlist_prices_export;
+procedure p_sections_export;
 procedure p_zip_backup;
 procedure p_backup_restore (
     pi_zip_file in blob
@@ -27,6 +28,7 @@ procedure p_restore_actions;
 procedure p_restore_books;
 procedure p_restore_wishlist_books;
 procedure p_restore_wishlist_prices;
+procedure p_restore_sections;
 procedure p_add_external_file(
   pi_backup backups.backup%type,
   pi_mime_type backups.mime_type%type
