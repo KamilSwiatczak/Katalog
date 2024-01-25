@@ -1,13 +1,13 @@
 create or replace package pkg_book_genres
 as
--- Declare the exception
+
     egenreshasbooks EXCEPTION;
 
--- Define a function for Create
+
     FUNCTION f_create_book_genre(
     pi_name in book_genres.name%type
     ) RETURN book_genres.id%type;
--- Define procedures for Update and Delete
+
     PROCEDURE p_update_book_genre(
         pi_id in book_genres.id%type,
         pi_name in book_genres.name%type
@@ -17,7 +17,7 @@ as
         pi_id in book_genres.id%type
     );
 
---grid save
+
 
 procedure p_manage_book_genre(
   pi_row_status CHAR,

@@ -12,14 +12,24 @@ is
   v_scope logger_logs.scope%type := gc_scope_prefix || 'f_create_book_genre';
   v_params logger.tab_param;
   v_id books.id%type;
+  v_genre_count number;
 begin
   logger.append_param(v_params, 'pi_name', pi_name);
   logger.log('START', v_scope, null, v_params);
-  INSERT INTO BOOK_GENRES (name)
-    VALUES (pi_name)
-    RETURNING id INTO v_id;
+
+  select count(1) into v_genre_count
+  from BOOK_GENRES
+  where name = pi_name;
+
+  if v_genre_count = 0 then
+    INSERT INTO BOOK_GENRES (name)
+      VALUES (pi_name)
+      RETURNING id INTO v_id;
+    RETURN v_id;
+   else
+    raise_application_error(-20001, 'Gatunek o nazwie "' || pi_name || '" już istnieje.');
+  end if;
   logger.log('END', v_scope);
-  RETURN v_id;
 exception
   when others then
     logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
@@ -35,13 +45,24 @@ procedure p_update_book_genre(
     )IS
       v_scope logger_logs.scope%type := gc_scope_prefix || 'p_update_book_genre';
       v_params logger.tab_param;
+      v_genre_count number;
+      
   begin
     logger.append_param(v_params, 'pi_id', pi_id);
     logger.append_param(v_params, 'pi_name', pi_name);
     logger.log('START', v_scope, null, v_params);
-    UPDATE BOOK_GENRES
-    SET name = pi_name
-    WHERE id = pi_id;
+
+    select count(1) into v_genre_count
+    from BOOK_GENRES
+    where name = pi_name;
+
+    if v_genre_count = 0 then
+      UPDATE BOOK_GENRES
+      SET name = pi_name
+      WHERE id = pi_id;
+      else
+        raise_application_error(-20001, 'Gatunek o nazwie "' || pi_name || '" już istnieje.');
+    end if;
     logger.log('END', v_scope);
 exception
   when others then
@@ -80,7 +101,7 @@ end p_delete_book_genre;
   
 
 
--- Grid save
+
 procedure p_manage_book_genre(
   pi_row_status CHAR,
   pio_id in out book_genres.id%type,
@@ -97,9 +118,15 @@ begin
   logger.log('START', v_scope, null, v_params);
       case pi_row_status
     when 'C' then
-        pio_id := pkg_book_genres.f_create_book_genre(pi_name);
+      if pi_name is not null then
+          pio_id := pkg_book_genres.f_create_book_genre(pi_name);
+        else raise_application_error(-20001, 'Gatunek musi mieć nazwę.');
+      end if;
     when 'U' then
-        pkg_book_genres.p_update_book_genre(pio_id, pi_name);
+      if pi_name is not null then
+          pkg_book_genres.p_update_book_genre(pio_id, pi_name);
+        else raise_application_error(-20001, 'Gatunek musi mieć nazwę.');
+      end if;
     when 'D' then
 		    pkg_book_genres.p_delete_book_genre(pio_id);
     end case;
