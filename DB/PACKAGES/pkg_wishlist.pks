@@ -13,7 +13,9 @@ procedure p_wishlist_books_create_update(
       pi_title in wishlist_books.title%type,
       pi_author in wishlist_books.author%type,
       pi_isbn in wishlist_books.isbn%type,
-      pi_link in wishlist_books.link%type
+      pi_link in wishlist_books.link%type,
+      pi_desired_price in wishlist_books.desired_price%type,
+      pi_email in wishlist_books.email%type
 );
 procedure p_wishlist_prices_create_update(
       pi_id in wishlist_prices.id%type,
@@ -23,5 +25,8 @@ procedure p_wishlist_prices_create_update(
 procedure p_get_lowest_price(
       pi_wishbook_id in wishlist_prices.wishbook_id%type,
       pi_link in wishlist_books.link%type
+      );
+procedure p_desired_price_notification(
+  pi_id in wishlist_books.id%type
       );
 end pkg_wishlist;

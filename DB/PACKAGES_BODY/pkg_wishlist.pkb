@@ -52,7 +52,9 @@ procedure p_wishlist_books_create_update(
       pi_title in wishlist_books.title%type,
       pi_author in wishlist_books.author%type,
       pi_isbn in wishlist_books.isbn%type,
-      pi_link in wishlist_books.link%type
+      pi_link in wishlist_books.link%type,
+      pi_desired_price in wishlist_books.desired_price%type,
+      pi_email in wishlist_books.email%type
   )
   as
     v_scope logger_logs.scope%type := gc_scope_prefix || 'p_wishlist_books_create_update';
@@ -64,11 +66,13 @@ procedure p_wishlist_books_create_update(
     logger.append_param(v_params, 'pi_author', pi_author);
     logger.append_param(v_params, 'pi_isbn', pi_isbn);
     logger.append_param(v_params, 'pi_link', pi_link);
+    logger.append_param(v_params, 'pi_desired_price', pi_desired_price);
+    logger.append_param(v_params, 'pi_email', pi_email);
     logger.log('START', v_scope, null, v_params);
 
     if pi_id is null then
-      INSERT INTO wishlist_books (title, author, isbn, link)
-      VALUES (pi_title, pi_author, pi_isbn, pi_link)
+      INSERT INTO wishlist_books (title, author, isbn, link, desired_price, email)
+      VALUES (pi_title, pi_author, pi_isbn, pi_link, pi_desired_price, pi_email)
       returning id into v_id;
       pkg_history.p_history_log(pi_action => 'NEW_WISHLIST_BOOK', pi_wishbook_id => v_id, pi_book_id => null, pi_section => 'WISHLIST_BOOKS');
       logger.log('Książka '||pi_title||' została dodana do listy życzeń.', v_scope);
@@ -76,7 +80,9 @@ procedure p_wishlist_books_create_update(
           set title=pi_title,
               author=pi_author,
               isbn=pi_isbn,
-              link=pi_link
+              link=pi_link,
+              desired_price=pi_desired_price,
+              email=pi_email
           where ID = pi_id;
           pkg_history.p_history_log(pi_action => 'EDIT_WISHLIST_BOOK', pi_wishbook_id => pi_id, pi_book_id => null, pi_section => 'WISHLIST_BOOKS');
           logger.log('Książka '||pi_title||' z listy życzeń została edytowana.', v_scope);
@@ -105,13 +111,13 @@ procedure p_wishlist_prices_create_update(
 
     if pi_id is null then
       INSERT INTO wishlist_prices (wishbook_id, price, time)
-      VALUES (pi_wishbook_id, pi_price, LOCALTIMESTAMP);
+      VALUES (pi_wishbook_id, pi_price, CURRENT_DATE);
       pkg_history.p_history_log(pi_action => 'NEW_WISHLIST_PRICE', pi_wishbook_id => pi_wishbook_id, pi_book_id => null, pi_section => 'WISHLIST_BOOKS');
       logger.log('Cena '||pi_wishbook_id||' została dodana.', v_scope);
     else update wishlist_prices
           set wishbook_id=pi_wishbook_id,
               price=pi_price,
-              time=LOCALTIMESTAMP
+              time=CURRENT_DATE
           where ID = pi_id;
           pkg_history.p_history_log(pi_action => 'EDIT_WISHLIST_PRICE', pi_wishbook_id => pi_wishbook_id, pi_book_id => null, pi_section => 'WISHLIST_BOOKS');
           logger.log('Cena '||pi_wishbook_id||' została edytowana.', v_scope);
@@ -153,6 +159,45 @@ exception
     raise;
 end p_get_lowest_price;
 
+procedure p_desired_price_notification(
+  pi_id in wishlist_books.id%type)
+as
+  v_scope logger_logs.scope%type := gc_scope_prefix || 'p_desired_price_notification';
+  v_params logger.tab_param;
+  type t_price_data is record(
+    title wishlist_books.title%type,
+    price wishlist_prices.price%type,
+    email wishlist_books.email%type,
+    desired_price wishlist_books.desired_price%type
+  );
+    v_price_data t_price_data;
 
+begin
+  logger.append_param(v_params, 'pi_id', pi_id);
+  logger.log('START', v_scope, null, v_params);
+  select b.title, p.price, b.email, b.desired_price
+  into v_price_data.title, v_price_data.price, v_price_data.email, v_price_data.desired_price
+  from wishlist_books b 
+  join wishlist_prices p on b.ID = p.WISHBOOK_ID 
+  where b.id = pi_id;
+
+
+  apex_mail.send (
+     p_from=>'test@katalog.com',
+     p_to                 => v_price_data.email,
+     p_template_static_id => 'DESIRED_PRICE_ACHIEVED',
+     p_placeholders       => '{' ||
+     '    "TITLE":'      || apex_json.stringify( v_price_data.title ) ||
+     '   ,"PRICE":'     || apex_json.stringify( v_price_data.price ) ||
+     '   ,"DESIRED_PRICE":' || apex_json.stringify( v_price_data.desired_price ) ||
+     '}' );
+  apex_mail.push_queue();
+
+  logger.log('END', v_scope);
+exception
+  when others then
+    logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
+    raise;
+end p_desired_price_notification;
 
 end pkg_wishlist;
