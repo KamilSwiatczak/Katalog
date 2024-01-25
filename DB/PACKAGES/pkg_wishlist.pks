@@ -22,6 +22,6 @@ procedure p_wishlist_prices_create_update(
       );
 procedure p_get_lowest_price(
       pi_wishbook_id in wishlist_prices.wishbook_id%type,
-      pi_isbn in wishlist_books.isbn%type
+      pi_link in wishlist_books.link%type
       );
 end pkg_wishlist;

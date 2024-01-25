@@ -179,7 +179,7 @@ PROCEDURE p_sections_export
     v_export := apex_data_export.export (
                     p_context   => v_context,
                     p_format    => apex_data_export.c_format_xlsx,
-                    p_file_name => 'genres/sections_backup');
+                    p_file_name => 'sections/sections_backup');
 
     apex_exec.close( v_context );
     
@@ -779,14 +779,14 @@ procedure p_restore_wishlist_books
   begin
     logger.log('START', v_scope, null, v_params);
 
-    select c001, c002, c003, c004, c005
+    select c001, c002, c003, c004, c005, c006
     BULK COLLECT INTO v_wishlist_books_backup
     FROM APEX_collections
     WHERE collection_name = 'WISHLIST_BOOKS_BACKUP'; 
 
     FORALL i IN 1..v_wishlist_books_backup.COUNT
-    insert into WISHLIST_BOOKS (ID, TITLE, AUTHOR, ISBN, LINK)
-    values (v_wishlist_books_backup(i).ID, v_wishlist_books_backup(i).TITLE, v_wishlist_books_backup(i).AUTHOR, v_wishlist_books_backup(i).ISBN, v_wishlist_books_backup(i).LINK);
+    insert into WISHLIST_BOOKS (ID, TITLE, AUTHOR, ISBN, LINK, DESIRED_PRICE)
+    values (v_wishlist_books_backup(i).ID, v_wishlist_books_backup(i).TITLE, v_wishlist_books_backup(i).AUTHOR, v_wishlist_books_backup(i).ISBN, v_wishlist_books_backup(i).LINK, v_wishlist_books_backup(i).DESIRED_PRICE);
 
 
     logger.log('Przywrócono wishlist_books.', v_scope);

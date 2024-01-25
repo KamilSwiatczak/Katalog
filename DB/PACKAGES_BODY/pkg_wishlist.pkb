@@ -126,7 +126,7 @@ end p_wishlist_prices_create_update;
 
 procedure p_get_lowest_price(
       pi_wishbook_id in wishlist_prices.wishbook_id%type,
-      pi_isbn in wishlist_books.isbn%type
+      pi_link in wishlist_books.link%type
       )
 as
   v_scope logger_logs.scope%type := gc_scope_prefix || 'p_get_lowest_price';
@@ -135,10 +135,11 @@ as
   v_price VARCHAR2(40);
 begin
   logger.append_param(v_params, 'pi_wishbook_id', pi_wishbook_id);
+  logger.append_param(v_params, 'pi_link', pi_link);
   logger.log('START', v_scope, null, v_params);
 
   v_xml := apex_web_service.make_rest_request(
-    p_url => 'https://www.bukoteka.pl/szczegoly.php?isbn='||pi_isbn,
+    p_url => pi_link,
     p_http_method => 'GET');
   v_price := REGEXP_SUBSTR(v_xml, 'od <span class="cena_big2" id="best_price"></span>(\d+),<sup>(\d+)</sup> zł', 1, 1, NULL, 1) ||
         '.' ||

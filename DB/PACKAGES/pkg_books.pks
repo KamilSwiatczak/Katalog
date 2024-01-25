@@ -32,14 +32,14 @@ procedure p_restore_book(
 procedure p_openlibrary_api(
   pi_isbn in books.isbn%type
 );
-procedure p_openlibrary_api_insert(
+procedure p_openlibrary_api_get_data(
     pi_isbn in books.isbn%type,
     po_year out books.year%type,
     po_title out books.title%type,
     po_author out books.author%type,
     po_publisher out books.publisher%type,
     po_language out books.language%type,
-    po_cover out books.cover%type,
+    -- po_cover out books.cover%type,
     po_mime_type out books.mime_type%type
 );
 end pkg_books;

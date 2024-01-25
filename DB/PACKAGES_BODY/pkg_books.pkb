@@ -304,18 +304,18 @@ procedure p_openlibrary_api(
 
 end p_openlibrary_api;
 
-procedure p_openlibrary_api_insert(
+procedure p_openlibrary_api_get_data(
     pi_isbn in books.isbn%type,
     po_year out books.year%type,
     po_title out books.title%type,
     po_author out books.author%type,
     po_publisher out books.publisher%type,
     po_language out books.language%type,
-    po_cover out books.cover%type,
+    -- po_cover out books.cover%type,
     po_mime_type out books.mime_type%type
 )
 as
-    v_scope logger_logs.scope%type := gc_scope_prefix || 'p_openlibrary_api_insert';
+    v_scope logger_logs.scope%type := gc_scope_prefix || 'p_openlibrary_api_get_data';
     v_params logger.tab_param;
     v_url VARCHAR2(4000);
     v_cover_url VARCHAR2(4000);
@@ -383,7 +383,10 @@ begin
         po_language := 'angielski';
     END IF;
 
-    po_cover := v_cover;
+    apex_collection.create_or_truncate_collection('TEMP_COVER');
+    APEX_COLLECTION.ADD_MEMBER(p_collection_name => 'TEMP_COVER', p_blob001 => v_cover);
+
+    -- po_cover := v_cover;
     po_mime_type := 'image/jpeg';
 
     logger.log('END', v_scope);
@@ -391,7 +394,7 @@ exception
     when others then
         logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
         raise;
-end p_openlibrary_api_insert;
+end p_openlibrary_api_get_data;
   
     
 
