@@ -90,7 +90,7 @@ PROCEDURE p_data_export
     l_context := apex_exec.open_query_context(
         p_location    => apex_exec.c_location_local_db,
         p_sql_query   => 
-        'select b.title, b.author, b.isbn, b.year, g.name as Genre, l.name as Location, b.score, b.description 
+        'select b.title as Tytuł, b.author as Autor, b.isbn as ISBN, b.year as Rok_wydania, g.name as Gatunek, l.name as Lokalizacja, b.score as Ocena, b.description as Opis
         from books b
         left join book_genres g 
         on b.genre_id = g.id
@@ -139,15 +139,26 @@ procedure p_delete_book(
       WHERE book_id=pi_id;
       DELETE FROM books 
       WHERE ID=pi_id;
-    else
-      update BOOKS
-      set DELETED ='Y'
-      where ID = pi_id;
-
-      pkg_history.p_history_log(pi_action => 'DELETE', pi_book_id => pi_id, pi_wishbook_id => null, pi_section => 'LIBRARY_BOOKS');
+      logger.log('Książka usunięta.', v_scope);
+      else
+      select COUNT(*)
+      into v_row_count
+      from BOOK_LENDING
+      where book_id = pi_id
+      and end_date is NULL;
+        if v_row_count = 0 then
+          update BOOKS
+          set DELETED ='Y'
+          where ID = pi_id;
+          pkg_history.p_history_log(pi_action => 'DELETE', pi_book_id => pi_id, pi_wishbook_id => null, pi_section => 'LIBRARY_BOOKS');
+          logger.log('Książka usunięta.', v_scope);
+          else 
+          raise_application_error(-20001, 'Nie można usunąć wypożyczonej książki.');
+      end if;
+      
     end if;
-    
-    logger.log('Książka usunięta.', v_scope);
+
+    logger.log('END', v_scope);
   exception
     when others then
       logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
@@ -310,9 +321,7 @@ procedure p_openlibrary_api_get_data(
     po_title out books.title%type,
     po_author out books.author%type,
     po_publisher out books.publisher%type,
-    po_language out books.language%type,
-    -- po_cover out books.cover%type,
-    po_mime_type out books.mime_type%type
+    po_language out books.language%type
 )
 as
     v_scope logger_logs.scope%type := gc_scope_prefix || 'p_openlibrary_api_get_data';
@@ -385,9 +394,6 @@ begin
 
     apex_collection.create_or_truncate_collection('TEMP_COVER');
     APEX_COLLECTION.ADD_MEMBER(p_collection_name => 'TEMP_COVER', p_blob001 => v_cover);
-
-    -- po_cover := v_cover;
-    po_mime_type := 'image/jpeg';
 
     logger.log('END', v_scope);
 exception

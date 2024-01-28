@@ -38,8 +38,6 @@ procedure p_openlibrary_api_get_data(
     po_title out books.title%type,
     po_author out books.author%type,
     po_publisher out books.publisher%type,
-    po_language out books.language%type,
-    -- po_cover out books.cover%type,
-    po_mime_type out books.mime_type%type
+    po_language out books.language%type
 );
 end pkg_books;
