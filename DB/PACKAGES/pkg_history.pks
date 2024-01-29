@@ -12,3 +12,4 @@ procedure p_history_log(
     
 
 end pkg_history;
+/

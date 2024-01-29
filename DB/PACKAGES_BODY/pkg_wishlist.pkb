@@ -179,19 +179,18 @@ begin
   into v_price_data.title, v_price_data.price, v_price_data.email, v_price_data.desired_price
   from wishlist_books b 
   join wishlist_prices p on b.ID = p.WISHBOOK_ID 
-  where b.id = pi_id;
+  where p.id = pi_id;
 
 
-  apex_mail.send (
-     p_from=>'test@katalog.com',
-     p_to                 => v_price_data.email,
-     p_template_static_id => 'DESIRED_PRICE_ACHIEVED',
-     p_placeholders       => '{' ||
+  pkg_notifications.p_create_email_notification (
+     pi_email => v_price_data.email,
+     pi_template_static_id => 'DESIRED_PRICE_ACHIEVED',
+     pi_placeholders       => '{' ||
      '    "TITLE":'      || apex_json.stringify( v_price_data.title ) ||
      '   ,"PRICE":'     || apex_json.stringify( v_price_data.price ) ||
      '   ,"DESIRED_PRICE":' || apex_json.stringify( v_price_data.desired_price ) ||
      '}' );
-  apex_mail.push_queue();
+
 
   logger.log('END', v_scope);
 exception
@@ -201,3 +200,4 @@ exception
 end p_desired_price_notification;
 
 end pkg_wishlist;
+/

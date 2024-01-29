@@ -30,3 +30,4 @@ procedure p_desired_price_notification(
   pi_id in wishlist_books.id%type
       );
 end pkg_wishlist;
+/
