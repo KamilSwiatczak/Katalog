@@ -356,10 +356,10 @@ begin
     
     v_id := v_members(1);
     
-    po_year := APEX_JSON.GET_VARCHAR2 (
+    po_year := TO_NUMBER(SUBSTR(APEX_JSON.GET_VARCHAR2 (
         p_path => 'records.%0.data.publish_date',
         p0 => v_id,
-        p_values => j
+        p_values => j), -4)
     );
     po_title := APEX_JSON.GET_VARCHAR2 (
       p_path => 'records.%0.data.title',
@@ -381,10 +381,6 @@ begin
       p0 => v_id,
       p_values => j
     );
-    
-    IF po_year IS NOT NULL THEN
-        po_year := SUBSTR(po_year, -4);
-    END IF;
 
     IF po_language = '/languages/pol' THEN
         po_language := 'polski';
