@@ -109,16 +109,14 @@ begin
   -- );
 
 
-  apex_mail.send (
-     p_from=>'test@katalog.com',
-     p_to                 => v_lending_data.email,
-     p_template_static_id => 'BOOK_REMINDER',
-     p_placeholders       => '{' ||
+  pkg_notifications.p_create_email_notification (
+     pi_email                 => v_lending_data.email,
+     pi_template_static_id => 'BOOK_REMINDER',
+     pi_placeholders       => '{' ||
      '    "TITLE":'      || apex_json.stringify( v_lending_data.title ) ||
      '   ,"PERSON":'     || apex_json.stringify( v_lending_data.person ) ||
      '   ,"START_DATE":' || apex_json.stringify( v_lending_data.start_date, 'YYYY-MM-DD' ) ||
      '}' );
-  apex_mail.push_queue();
 
   logger.log('END', v_scope);
 exception

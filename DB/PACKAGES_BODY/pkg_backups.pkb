@@ -10,6 +10,7 @@ as
   TYPE wishlist_books_table_type IS TABLE OF WISHLIST_BOOKS%ROWTYPE;
   TYPE wishlist_prices_table_type IS TABLE OF WISHLIST_PRICES%ROWTYPE;
   TYPE sections_table_type IS TABLE OF SECTIONS%ROWTYPE;
+  TYPE notifications_table_type IS TABLE OF NOTIFICATIONS%ROWTYPE;
   TYPE books_record_type IS RECORD (
   id           books.id%TYPE,
   title        books.title%TYPE,
@@ -196,6 +197,37 @@ PROCEDURE p_sections_export
         raise;
 END p_sections_export; 
 
+PROCEDURE p_notifications_export 
+  as
+    v_scope logger_logs.scope%type := gc_scope_prefix || 'p_notifications_export';
+    v_params logger.tab_param;
+    v_context apex_exec.t_context;
+    v_export  apex_data_export.t_export;
+  BEGIN
+    logger.log('START', v_scope, null, v_params);
+    v_context := apex_exec.open_query_context(
+        p_location    => apex_exec.c_location_local_db,
+        p_sql_query   => 'select * from notifications');
+
+    v_export := apex_data_export.export (
+                    p_context   => v_context,
+                    p_format    => apex_data_export.c_format_xlsx,
+                    p_file_name => 'notifications/notifications_backup');
+
+    apex_exec.close( v_context );
+    
+    insert into my_temp_files (file_name, file_content, mime_type)
+    values (v_export.file_name, v_export.content_blob, v_export.mime_type);
+
+    logger.log('Eksportowano notifications', v_scope);
+
+  EXCEPTION
+    when others THEN
+        logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
+        raise;
+        apex_exec.close( v_context );
+        raise;
+END p_notifications_export; 
 
 PROCEDURE p_books_export as
     v_scope logger_logs.scope%type := gc_scope_prefix || 'p_books_export';
@@ -396,6 +428,7 @@ procedure p_zip_backup
     pkg_backups.p_wishlist_books_export;
     pkg_backups.p_wishlist_prices_export;
     pkg_backups.p_sections_export;
+    pkg_backups.p_notifications_export;    
 
     for i in (select file_name, file_content
                   from MY_TEMP_FILES)
@@ -474,6 +507,7 @@ procedure p_RESTORE_FROM_EXISTING_BACKUP(
 
     p_parse_to_collection;
 
+    delete from NOTIFICATIONS;
     delete from BOOK_LENDING;
     delete from HISTORY;
     delete from BOOKS;
@@ -484,6 +518,7 @@ procedure p_RESTORE_FROM_EXISTING_BACKUP(
     delete from WISHLIST_BOOKS;
     delete from SECTIONS;
     
+    p_restore_notifications;
     p_restore_sections;
     p_restore_locations;
     p_restore_genres;
@@ -513,7 +548,9 @@ procedure p_RESTORE_FROM_EXISTING_BACKUP(
     APEX_COLLECTION.TRUNCATE_COLLECTION(
     p_collection_name => 'WISHLIST_PRICES_BACKUP');
     APEX_COLLECTION.TRUNCATE_COLLECTION(
-    p_collection_name => 'SECTIONS_BACKUP');   
+    p_collection_name => 'SECTIONS_BACKUP');
+    APEX_COLLECTION.TRUNCATE_COLLECTION(
+    p_collection_name => 'NOTIFICATIONS_BACKUP');     
     logger.log('END', v_scope);
   exception
     when others then
@@ -625,6 +662,42 @@ procedure p_restore_sections
         logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
         raise;
   end p_restore_sections;
+
+procedure p_restore_notifications
+  as
+    v_scope logger_logs.scope%type := gc_scope_prefix || 'p_restore_notifications';
+    v_params logger.tab_param;
+    v_notifications_backup notifications_table_type;
+    
+  begin
+    logger.log('START', v_scope, null, v_params);
+
+    select c001, c002, c003, c004, c005, c006, c007, c008, c009, c010, c011
+    BULK COLLECT INTO v_notifications_backup
+    FROM APEX_collections
+    WHERE collection_name = 'NOTIFICATIONS_BACKUP'; 
+      
+    FORALL i IN 1..v_notifications_backup.COUNT
+    insert into NOTIFICATIONS (ID, NOTIFICATION_TEXT, EMAIL_HTML_BODY, RECEIVER, EMAIL, TYPE, READ, SENT, CREATE_DATE, EMAIL_SUBJECT, EMAIL_PLAIN_BODY)
+    values (v_notifications_backup(i).ID, 
+            v_notifications_backup(i).NOTIFICATION_TEXT,
+            v_notifications_backup(i).EMAIL_HTML_BODY, 
+            v_notifications_backup(i).RECEIVER, 
+            v_notifications_backup(i).EMAIL, 
+            v_notifications_backup(i).TYPE, 
+            v_notifications_backup(i).READ,
+            v_notifications_backup(i).SENT, 
+            v_notifications_backup(i).CREATE_DATE,
+            v_notifications_backup(i).EMAIL_SUBJECT,
+            v_notifications_backup(i).EMAIL_PLAIN_BODY 
+            );
+
+    logger.log('Przywrócono notifications.', v_scope);
+    exception
+      when others then
+        logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
+        raise;
+  end p_restore_notifications;
 
 
 procedure p_restore_lending

@@ -243,6 +243,10 @@ procedure p_openlibrary_api(
         p_path => 'records'
     );
     
+    IF v_members IS NULL OR v_members.COUNT = 0 THEN
+        RAISE_APPLICATION_ERROR(-20001, 'Książka o podanym ISBN nie jest dostępna w Open Library.');
+    END IF;
+
     v_id := v_members(1);
     
     v_year := APEX_JSON.GET_VARCHAR2 (
@@ -353,7 +357,11 @@ begin
         p_values => j,
         p_path => 'records'
     );
-    
+
+    IF v_members IS NULL OR v_members.COUNT = 0 THEN
+        RAISE_APPLICATION_ERROR(-20001, 'Książka o podanym ISBN nie jest dostępna w Open Library.');
+    END IF;
+
     v_id := v_members(1);
     
     po_year := TO_NUMBER(SUBSTR(APEX_JSON.GET_VARCHAR2 (
