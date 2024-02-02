@@ -29,5 +29,10 @@ procedure p_get_lowest_price(
 procedure p_desired_price_notification(
   pi_id in wishlist_books.id%type
       );
+procedure p_price_drop_below_average_notification(
+  pi_wishbook_id in wishlist_prices.wishbook_id%type
+);
+
+      
 end pkg_wishlist;
 /

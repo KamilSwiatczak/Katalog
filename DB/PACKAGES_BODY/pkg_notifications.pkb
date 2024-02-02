@@ -119,7 +119,10 @@ procedure p_send_email_notification(
   begin
     logger.append_param(v_params, 'pi_id', pi_id);
     logger.log('START', v_scope, null, v_params);
+
     select * into v_email_data from notifications where id = pi_id;
+
+    IF v_email_data.TYPE like '%+EMAIL+%' THEN
     APEX_MAIL.SEND (
       p_to=>v_email_data.email,
       p_from=>'test@katalog.com',
@@ -130,6 +133,8 @@ procedure p_send_email_notification(
     UPDATE NOTIFICATIONS
     SET SENT = 'y'
     WHERE ID = pi_id;
+    END IF;
+
     logger.log('END', v_scope);
   exception
     when others then

@@ -159,6 +159,8 @@ exception
     raise;
 end p_get_lowest_price;
 
+
+
 procedure p_desired_price_notification(
   pi_id in wishlist_books.id%type)
 as
@@ -198,6 +200,63 @@ exception
     logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
     raise;
 end p_desired_price_notification;
+
+
+
+procedure p_price_drop_below_average_notification(
+  pi_wishbook_id in wishlist_prices.wishbook_id%type
+)
+as
+  v_scope logger_logs.scope%type := gc_scope_prefix || 'p_price_drop_below_average_notification';
+  v_params logger.tab_param;
+  v_30_average number;
+  v_new_price wishlist_prices.price%type;
+  v_email wishlist_books.email%type;
+  v_title wishlist_books.title%type;
+
+begin
+  logger.append_param(v_params, 'pi_wishbook_id', pi_wishbook_id);
+  logger.log('START', v_scope, null, v_params);
+  
+  select PRICE into v_new_price from WISHLIST_PRICES 
+  where WISHBOOK_ID = pi_wishbook_id 
+  fetch FIRST 1 rows only;
+
+  select EMAIL into v_email from WISHLIST_BOOKS
+  where ID = pi_wishbook_id;
+
+  select TITLE into v_title from WISHLIST_BOOKS
+  where ID = pi_wishbook_id;
+
+  SELECT AVG(PRICE) into v_30_average
+    FROM (
+    SELECT PRICE
+    FROM WISHLIST_PRICES
+    WHERE WISHBOOK_ID = pi_wishbook_id
+    ORDER BY TIME DESC
+    OFFSET 1 ROW
+    FETCH FIRST 30 ROWS ONLY
+  );
+  if v_30_average IS NOT NULL and v_new_price <= v_30_average*0.9 then
+  begin
+    pkg_notifications.p_create_email_notification (
+        pi_email => v_email,
+        pi_template_static_id => '10_DROP_PRICE_NOTIFICATION',
+        pi_placeholders       => '{' ||
+        '    "TITLE":' || apex_json.stringify( v_title ) ||
+        '   ,"PRICE":' || apex_json.stringify( v_new_price ) ||
+        '}' );
+  end;
+  end if;
+
+  logger.log('END', v_scope);
+exception
+  when others then
+    logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
+    raise;
+end p_price_drop_below_average_notification;
+
+  
 
 end pkg_wishlist;
 /
