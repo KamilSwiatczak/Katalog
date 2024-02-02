@@ -3,6 +3,7 @@ as
 
   --==== Scope loggera ====--
   gc_scope_prefix constant varchar2(31) := lower('pkg_wishlist') || '.';
+  gc_price_percentage constant number := 0.9;
 
 
 procedure p_delete_wishbook(
@@ -219,7 +220,8 @@ begin
   logger.log('START', v_scope, null, v_params);
   
   select PRICE into v_new_price from WISHLIST_PRICES 
-  where WISHBOOK_ID = pi_wishbook_id 
+  where WISHBOOK_ID = pi_wishbook_id and TRUNC(TIME, 'DD') = TRUNC(SYSDATE, 'DD')
+  order by id desc
   fetch FIRST 1 rows only;
 
   select EMAIL into v_email from WISHLIST_BOOKS
@@ -237,8 +239,12 @@ begin
     OFFSET 1 ROW
     FETCH FIRST 30 ROWS ONLY
   );
-  if v_30_average IS NOT NULL and v_new_price <= v_30_average*0.9 then
-  begin
+    logger.log('v_title:'||v_title, v_scope);
+    logger.log('v_30_average:'||v_30_average, v_scope);
+    logger.log('v_new_price:'||v_new_price, v_scope);
+    logger.log('gc_price_percentage:'||gc_price_percentage, v_scope);
+  if v_30_average IS NOT NULL and v_new_price <= v_30_average*gc_price_percentage then
+
     pkg_notifications.p_create_email_notification (
         pi_email => v_email,
         pi_template_static_id => '10_DROP_PRICE_NOTIFICATION',
@@ -246,7 +252,8 @@ begin
         '    "TITLE":' || apex_json.stringify( v_title ) ||
         '   ,"PRICE":' || apex_json.stringify( v_new_price ) ||
         '}' );
-  end;
+
+    logger.log('Przygotowano email dla:'||v_title||'.', v_scope);
   end if;
 
   logger.log('END', v_scope);
