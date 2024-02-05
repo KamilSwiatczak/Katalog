@@ -170,7 +170,6 @@ as
   type t_price_data is record(
     title wishlist_books.title%type,
     price wishlist_prices.price%type,
-    email wishlist_books.email%type,
     desired_price wishlist_books.desired_price%type
   );
     v_price_data t_price_data;
@@ -178,22 +177,24 @@ as
 begin
   logger.append_param(v_params, 'pi_id', pi_id);
   logger.log('START', v_scope, null, v_params);
-  select b.title, p.price, b.email, b.desired_price
-  into v_price_data.title, v_price_data.price, v_price_data.email, v_price_data.desired_price
+  select b.title, p.price, b.desired_price
+  into v_price_data.title, v_price_data.price, v_price_data.desired_price
   from wishlist_books b 
   join wishlist_prices p on b.ID = p.WISHBOOK_ID 
   where p.id = pi_id;
 
-
-  pkg_notifications.p_create_email_notification (
-     pi_email => v_price_data.email,
+  for i in (select * from SYSTEM_NOTIFICATIONS_USERS)
+    loop
+  pkg_notifications.p_create_appemail_notification (
+     pi_email => i.email,
      pi_template_static_id => 'DESIRED_PRICE_ACHIEVED',
+     pi_receiver => i.user_name,
      pi_placeholders       => '{' ||
      '    "TITLE":'      || apex_json.stringify( v_price_data.title ) ||
      '   ,"PRICE":'     || apex_json.stringify( v_price_data.price ) ||
      '   ,"DESIRED_PRICE":' || apex_json.stringify( v_price_data.desired_price ) ||
      '}' );
-
+    end loop;
 
   logger.log('END', v_scope);
 exception
@@ -212,7 +213,6 @@ as
   v_params logger.tab_param;
   v_30_average number;
   v_new_price wishlist_prices.price%type;
-  v_email wishlist_books.email%type;
   v_title wishlist_books.title%type;
 
 begin
@@ -224,10 +224,7 @@ begin
   order by id desc
   fetch FIRST 1 rows only;
 
-  select EMAIL into v_email from WISHLIST_BOOKS
-  where ID = pi_wishbook_id;
-
-  select TITLE into v_title from WISHLIST_BOOKS
+  select  TITLE into v_title from WISHLIST_BOOKS
   where ID = pi_wishbook_id;
 
   SELECT AVG(PRICE) into v_30_average
@@ -245,14 +242,18 @@ begin
     logger.log('gc_price_percentage:'||gc_price_percentage, v_scope);
   if v_30_average IS NOT NULL and v_new_price <= v_30_average*gc_price_percentage then
 
-    pkg_notifications.p_create_email_notification (
-        pi_email => v_email,
+  for i in (select * from SYSTEM_NOTIFICATIONS_USERS)
+    loop
+    pkg_notifications.p_create_appemail_notification (
+        pi_email => i.email,
         pi_template_static_id => '10_DROP_PRICE_NOTIFICATION',
+        pi_receiver => i.user_name,
         pi_placeholders       => '{' ||
         '    "TITLE":' || apex_json.stringify( v_title ) ||
         '   ,"PRICE":' || apex_json.stringify( v_new_price ) ||
         '}' );
-
+    end loop;
+  
     logger.log('Przygotowano email dla:'||v_title||'.', v_scope);
   end if;
 

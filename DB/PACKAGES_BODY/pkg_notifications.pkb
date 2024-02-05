@@ -73,7 +73,6 @@ procedure p_create_appemail_notification(
     pi_email in notifications.email%type,
     pi_template_static_id in varchar2,
     pi_placeholders in clob,
-    pi_notification_text in notifications.notification_text%type,
     pi_receiver in notifications.receiver%type
   )
   as
@@ -86,7 +85,6 @@ procedure p_create_appemail_notification(
     logger.append_param(v_params, 'pi_email', pi_email);
     logger.append_param(v_params, 'pi_template_static_id', pi_template_static_id);
     logger.append_param(v_params, 'pi_placeholders', pi_placeholders);
-    logger.append_param(v_params, 'pi_notification_text', pi_notification_text);
     logger.append_param(v_params, 'pi_receiver', pi_receiver);
     logger.log('START', v_scope, null, v_params);
 
@@ -98,7 +96,7 @@ procedure p_create_appemail_notification(
         p_text=>v_text
       );
       INSERT INTO notifications (EMAIL_HTML_BODY, EMAIL, TYPE, EMAIL_SUBJECT, NOTIFICATION_TEXT, RECEIVER, EMAIL_PLAIN_BODY)
-      VALUES (v_html, pi_email, '+EMAIL+', v_subject, pi_notification_text, pi_receiver, v_text);
+      VALUES (v_html, pi_email, '+APP+EMAIL+', v_subject, v_text, pi_receiver, v_text);
     logger.log('END', v_scope);
   exception
     when others then

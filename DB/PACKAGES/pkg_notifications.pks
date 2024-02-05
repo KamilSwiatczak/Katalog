@@ -19,7 +19,6 @@ procedure p_create_appemail_notification(
   pi_email in notifications.email%type,
   pi_template_static_id in varchar2,
   pi_placeholders in clob,
-  pi_notification_text in notifications.notification_text%type,
   pi_receiver in notifications.receiver%type
 );
 
