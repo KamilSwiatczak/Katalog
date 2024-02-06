@@ -111,14 +111,13 @@ procedure p_wishlist_prices_create_update(
     logger.log('START', v_scope, null, v_params);
 
     if pi_id is null then
-      INSERT INTO wishlist_prices (wishbook_id, price, time)
-      VALUES (pi_wishbook_id, pi_price, CURRENT_DATE);
+      INSERT INTO wishlist_prices (wishbook_id, price)
+      VALUES (pi_wishbook_id, pi_price);
       pkg_history.p_history_log(pi_action => 'NEW_WISHLIST_PRICE', pi_wishbook_id => pi_wishbook_id, pi_book_id => null, pi_section => 'WISHLIST_BOOKS');
       logger.log('Cena '||pi_wishbook_id||' została dodana.', v_scope);
     else update wishlist_prices
           set wishbook_id=pi_wishbook_id,
-              price=pi_price,
-              time=CURRENT_DATE
+              price=pi_price
           where ID = pi_id;
           pkg_history.p_history_log(pi_action => 'EDIT_WISHLIST_PRICE', pi_wishbook_id => pi_wishbook_id, pi_book_id => null, pi_section => 'WISHLIST_BOOKS');
           logger.log('Cena '||pi_wishbook_id||' została edytowana.', v_scope);

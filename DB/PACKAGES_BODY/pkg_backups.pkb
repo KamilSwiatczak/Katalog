@@ -449,8 +449,8 @@ procedure p_zip_backup
       end loop;            
     apex_zip.finish (
           p_zipped_blob => v_zip_file);
-    insert into backups (user_name, time, backup, mime_type, file_name)
-    values (apex_custom_auth.get_username, LOCALTIMESTAMP, v_zip_file, 'application/zip', 'backup_'||LOCALTIMESTAMP||'.zip');
+    insert into backups (user_name, backup, mime_type, file_name)
+    values (apex_custom_auth.get_username, v_zip_file, 'application/zip', 'backup_'||SYSDATE||'.zip');
     delete from MY_TEMP_FILES;
     logger.log('END', v_scope);
   exception
@@ -915,8 +915,8 @@ procedure p_add_external_file(
     logger.log('START', v_scope, null, v_params);
   
   
-    insert into backups (user_name, time, backup, mime_type, file_name)
-    values (apex_custom_auth.get_username, LOCALTIMESTAMP, pi_backup, pi_mime_type, 'external_backup_'||LOCALTIMESTAMP||'.zip');
+    insert into backups (user_name, backup, mime_type, file_name)
+    values (apex_custom_auth.get_username, pi_backup, pi_mime_type, 'external_backup_'||SYSDATE||'.zip');
   
     logger.log('END', v_scope);
   exception
