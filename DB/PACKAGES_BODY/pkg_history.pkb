@@ -54,8 +54,8 @@ begin
   logger.append_param(v_params, 'pi_book_id', pi_book_id);
   logger.log('START', v_scope, null, v_params);
   if f_action_verify(pi_action) then
-    INSERT INTO history (action_id, book_id, user_name, wishbook_id, section)
-    VALUES (pi_action, pi_book_id, apex_custom_auth.get_username, pi_wishbook_id, pi_section);
+    INSERT INTO history (action_id, book_id, user_name, wishbook_id, section, action_date)
+    VALUES (pi_action, pi_book_id, apex_custom_auth.get_username, pi_wishbook_id, pi_section, SYSDATE);
   else 
     RAISE_APPLICATION_ERROR(-20006, 'Błędna akcja'); 
   end if;
