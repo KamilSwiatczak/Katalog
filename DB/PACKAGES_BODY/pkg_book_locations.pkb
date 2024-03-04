@@ -1,7 +1,13 @@
 create or replace package body pkg_book_locations
 as
 gc_scope_prefix constant varchar2(31) := lower('pkg_books_genres') || '.';
-
+TYPE locations_table_type IS RECORD(
+  id locations.id%TYPE,
+  name locations.name%type,
+  current_count number,
+  max_count locations.max_spaces%type
+);
+TYPE locations_table IS TABLE OF locations_table_type;
 
 
 
@@ -75,7 +81,43 @@ exception
     raise;
 end p_remove_location;
 
-    
+
+function f_check_if_full
+  return
+    APEX_T_NUMBER
+  as
+    v_scope logger_logs.scope%type := gc_scope_prefix || 'f_check_if_full';
+    v_params logger.tab_param;
+    v_return APEX_T_NUMBER := APEX_T_NUMBER();
+    v_table locations_table;
+  begin
+    logger.log('START', v_scope, null, v_params);
+
+    select l.id, l.name, count(b.id), max_spaces 
+    bulk collect into v_table
+    from locations l 
+    left join books b on l.id = b.location_id 
+    group by l.id, l.name, max_spaces;
+
+
+    for i in v_table.first..v_table.last 
+    loop
+      logger.log(v_table(i).name);
+      if v_table(i).current_count > v_table(i).max_count then 
+        v_return.extend();
+        v_return(v_return.last) := v_table(i).id;
+      end if;
+    end loop;
+    logger.log('END', v_scope);
+    return v_return;
+  exception
+    when others then
+      logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
+      raise;
+end f_check_if_full;
+
+  
+
 
 end pkg_book_locations;
 /

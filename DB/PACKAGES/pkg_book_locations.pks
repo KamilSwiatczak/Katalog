@@ -11,5 +11,7 @@ procedure p_remove_location(
   pi_id in locations.id%type
 ); 
 
+function f_check_if_full RETURN APEX_T_NUMBER;
+
 end pkg_book_locations;
 /
