@@ -129,7 +129,7 @@ procedure p_send_email_notification(
       p_subj=>v_email_data.EMAIL_SUBJECT
     );
     UPDATE NOTIFICATIONS
-    SET SENT = 'y'
+    SET SENT = 'y', DATE_SENT = SYSDATE
     WHERE ID = pi_id;
     END IF;
 

@@ -1,34 +1,90 @@
 create or replace package body pkg_backups
 as
   gc_scope_prefix constant varchar2(31) := lower('pkg_backups') || '.';
-  TYPE locations_table_type IS TABLE OF LOCATIONS%ROWTYPE;
+  TYPE locations_record_type IS RECORD(
+    id locations.id%type, 
+    name locations.name%type, 
+    capacity locations.capacity%type);
+  TYPE locations_table_type IS TABLE OF locations_record_type;
   TYPE temp_files_type IS TABLE OF MY_TEMP_FILES%ROWTYPE;
-  TYPE lending_table_type IS TABLE OF BOOK_LENDING%ROWTYPE;
-  TYPE history_table_type IS TABLE OF HISTORY%ROWTYPE;
-  TYPE genres_table_type IS TABLE OF BOOK_GENRES%ROWTYPE;
-  TYPE actions_table_type IS TABLE OF ACTIONS%ROWTYPE;
-  TYPE wishlist_books_table_type IS TABLE OF WISHLIST_BOOKS%ROWTYPE;
-  TYPE wishlist_prices_table_type IS TABLE OF WISHLIST_PRICES%ROWTYPE;
-  TYPE sections_table_type IS TABLE OF SECTIONS%ROWTYPE;
-  TYPE notifications_table_type IS TABLE OF NOTIFICATIONS%ROWTYPE;
-  TYPE system_notifications_users_table_type IS TABLE OF SYSTEM_NOTIFICATIONS_USERS%ROWTYPE;
+  TYPE lending_record_type IS RECORD(
+    id book_lending.id%type, 
+    book_id book_lending.book_id%type, 
+    start_date book_lending.start_date%type, 
+    end_date book_lending.end_date%type, 
+    person book_lending.person%type, 
+    email book_lending.email%type);
+  TYPE lending_table_type IS TABLE OF lending_record_type;
+  TYPE history_record_type IS RECORD (
+    id history.id%type, 
+    action_id history.action_id%type, 
+    book_id history.book_id%type, 
+    user_name history.user_name%type, 
+    wishbook_id history.wishbook_id%type, 
+    section history.section%type, 
+    action_date history.action_date%type);
+  TYPE history_table_type IS TABLE OF history_record_type;
+  TYPE genres_record_type IS RECORD (
+    id book_genres.id%TYPE,
+    name book_genres.name%TYPE);
+  TYPE genres_table_type IS TABLE OF genres_record_type;
+  TYPE actions_record_type IS RECORD (
+    action actions.action%TYPE,
+    description actions.description%TYPE);
+  TYPE actions_table_type IS TABLE OF actions_record_type;
+  TYPE wishlist_books_record_type IS RECORD(
+    id wishlist_books.id%TYPE, 
+    title wishlist_books.title%TYPE, 
+    author wishlist_books.author%TYPE, 
+    isbn wishlist_books.isbn%TYPE, 
+    link wishlist_books.link%TYPE, 
+    desired_price wishlist_books.desired_price%TYPE, 
+    email wishlist_books.email%TYPE);
+  TYPE wishlist_books_table_type IS TABLE OF wishlist_books_record_type;
+  TYPE wishlist_prices_record_type IS RECORD(
+    id wishlist_prices.id%TYPE, 
+    wishbook_id wishlist_prices.wishbook_id%TYPE, 
+    price wishlist_prices.price%TYPE, 
+    time wishlist_prices.time%TYPE);
+  TYPE wishlist_prices_table_type IS TABLE OF wishlist_prices_record_type;
+  TYPE sections_record_type IS RECORD(
+    section sections.section%type, 
+    description sections.description%type);
+  TYPE sections_table_type IS TABLE OF sections_record_type;
+  TYPE notifications_record_type IS RECORD(
+    id notifications.id%type,
+    notification_text notifications.notification_text%type, 
+    email_html_body notifications.email_html_body%type, 
+    receiver notifications.receiver%type, 
+    email notifications.email%type, 
+    type notifications.type%type, 
+    read notifications.read%type, 
+    sent notifications.sent%type, 
+    email_subject notifications.email_subject%type, 
+    email_plain_body notifications.email_plain_body%type,
+    date_sent notifications.date_sent%type);
+  TYPE notifications_table_type IS TABLE OF notifications_record_type;
+  TYPE system_notifications_users_record_type IS RECORD(
+    id system_notifications_users.id%type, 
+    user_name system_notifications_users.user_name%type, 
+    email system_notifications_users.email%type);
+  TYPE system_notifications_users_table_type IS TABLE OF system_notifications_users_record_type;
   TYPE books_record_type IS RECORD (
-  id           books.id%TYPE,
-  title        books.title%TYPE,
-  author       books.author%TYPE,
-  isbn         books.isbn%TYPE,
-  year         books.year%TYPE,
-  genre_id     books.genre_id%TYPE,
-  location_id  books.location_id%TYPE,
-  score        books.score%TYPE,
-  description  books.description%TYPE,
-  MIME_TYPE    books.MIME_TYPE%TYPE,
-  FILE_NAME    books.FILE_NAME%TYPE,
-  deleted      books.DELETED%TYPE,
-  publisher    books.PUBLISHER%TYPE,
-  language     books.LANGUAGE%TYPE,
-  create_date  books.CREATE_DATE%TYPE);
-TYPE books_table_type IS TABLE OF books_record_type;
+    id           books.id%TYPE,
+    title        books.title%TYPE,
+    author       books.author%TYPE,
+    isbn         books.isbn%TYPE,
+    year         books.year%TYPE,
+    genre_id     books.genre_id%TYPE,
+    location_id  books.location_id%TYPE,
+    score        books.score%TYPE,
+    description  books.description%TYPE,
+    MIME_TYPE    books.MIME_TYPE%TYPE,
+    FILE_NAME    books.FILE_NAME%TYPE,
+    deleted      books.DELETED%TYPE,
+    publisher    books.PUBLISHER%TYPE,
+    language     books.LANGUAGE%TYPE);
+  TYPE books_table_type IS TABLE OF books_record_type;
 
 
 PROCEDURE p_genres_export 
@@ -41,7 +97,7 @@ PROCEDURE p_genres_export
     logger.log('START', v_scope, null, v_params);
     v_context := apex_exec.open_query_context(
         p_location    => apex_exec.c_location_local_db,
-        p_sql_query   => 'select * from book_genres');
+        p_sql_query   => 'select id, name from book_genres');
 
     v_export := apex_data_export.export (
                     p_context   => v_context,
@@ -76,7 +132,7 @@ PROCEDURE p_actions_export
     logger.log('START', v_scope, null, v_params);
     v_context := apex_exec.open_query_context(
         p_location    => apex_exec.c_location_local_db,
-        p_sql_query   => 'select * from actions');
+        p_sql_query   => 'select action, description from actions');
 
     v_export := apex_data_export.export (
                     p_context   => v_context,
@@ -111,7 +167,7 @@ PROCEDURE p_lending_export
     logger.log('START', v_scope, null, v_params);
     v_context := apex_exec.open_query_context(
         p_location    => apex_exec.c_location_local_db,
-        p_sql_query   => 'select * from book_lending');
+        p_sql_query   => 'select id, book_id, start_date, end_date, person, email from book_lending');
 
     v_export := apex_data_export.export (
                     p_context   => v_context,
@@ -145,7 +201,7 @@ PROCEDURE p_location_export as
     logger.log('START', v_scope, null, v_params);
     v_context := apex_exec.open_query_context(
         p_location    => apex_exec.c_location_local_db,
-        p_sql_query   => 'select * from locations');
+        p_sql_query   => 'select id, name, capacity from locations');
 
     v_export := apex_data_export.export (
                     p_context   => v_context,
@@ -177,7 +233,7 @@ PROCEDURE p_sections_export
     logger.log('START', v_scope, null, v_params);
     v_context := apex_exec.open_query_context(
         p_location    => apex_exec.c_location_local_db,
-        p_sql_query   => 'select * from sections');
+        p_sql_query   => 'select section, description from sections');
 
     v_export := apex_data_export.export (
                     p_context   => v_context,
@@ -209,7 +265,7 @@ PROCEDURE p_notifications_export
     logger.log('START', v_scope, null, v_params);
     v_context := apex_exec.open_query_context(
         p_location    => apex_exec.c_location_local_db,
-        p_sql_query   => 'select * from notifications');
+        p_sql_query   => 'select id, notification_text, email_html_body, receiver, email, type, read, sent, email_subject, email_plain_body, date_sent from notifications');
 
     v_export := apex_data_export.export (
                     p_context   => v_context,
@@ -240,7 +296,7 @@ PROCEDURE p_books_export as
     logger.log('START', v_scope, null, v_params);
     v_context := apex_exec.open_query_context(
         p_location    => apex_exec.c_location_local_db,
-        p_sql_query   => 'select * from books');
+        p_sql_query   => 'select id, title, author, isbn, year, genre_id, location_id, score, description, cover, mime_type, file_name, deleted, publisher, language from books');
 
     v_export := apex_data_export.export (
                     p_context   => v_context,
@@ -275,7 +331,7 @@ PROCEDURE p_backups_export as
     logger.log('START', v_scope, null, v_params);
     v_context := apex_exec.open_query_context(
         p_location    => apex_exec.c_location_local_db,
-        p_sql_query   => 'select * from backups');
+        p_sql_query   => 'select id, user_name, backup, mime_type, file_name from backups');
 
     v_export := apex_data_export.export (
                     p_context   => v_context,
@@ -309,7 +365,7 @@ PROCEDURE p_history_export as
     logger.log('START', v_scope, null, v_params);
     v_context := apex_exec.open_query_context(
         p_location    => apex_exec.c_location_local_db,
-        p_sql_query   => 'select * from history');
+        p_sql_query   => 'select id, action_id, book_id, user_name, wishbook_id, section, action_date from history');
 
     v_export := apex_data_export.export (
                     p_context   => v_context,
@@ -340,7 +396,7 @@ PROCEDURE p_wishlist_books_export as
     logger.log('START', v_scope, null, v_params);
     v_context := apex_exec.open_query_context(
         p_location    => apex_exec.c_location_local_db,
-        p_sql_query   => 'select * from wishlist_books');
+        p_sql_query   => 'select id, title, author, isbn, link, desired_price, email from wishlist_books');
 
     v_export := apex_data_export.export (
                     p_context   => v_context,
@@ -372,7 +428,7 @@ PROCEDURE p_wishlist_prices_export as
     logger.log('START', v_scope, null, v_params);
     v_context := apex_exec.open_query_context(
         p_location    => apex_exec.c_location_local_db,
-        p_sql_query   => 'select * from wishlist_prices');
+        p_sql_query   => 'select id, wishbook_id, price, time from wishlist_prices');
 
     v_export := apex_data_export.export (
                     p_context   => v_context,
@@ -403,7 +459,7 @@ PROCEDURE p_system_notifications_users_export as
     logger.log('START', v_scope, null, v_params);
     v_context := apex_exec.open_query_context(
         p_location    => apex_exec.c_location_local_db,
-        p_sql_query   => 'select * from system_notifications_users');
+        p_sql_query   => 'select id, user_name, email from system_notifications_users');
 
     v_export := apex_data_export.export (
                     p_context   => v_context,
@@ -646,8 +702,8 @@ procedure p_restore_locations
     WHERE collection_name = 'LOCATIONS_BACKUP'; 
       
     FORALL i IN 1..v_locations_backup.COUNT
-    insert into LOCATIONS (ID, NAME, CREATE_DATE)
-    values (v_locations_backup(i).ID, v_locations_backup(i).NAME, v_locations_backup(i).CREATE_DATE);
+    insert into LOCATIONS (ID, NAME, CAPACITY)
+    values (v_locations_backup(i).ID, v_locations_backup(i).NAME, v_locations_backup(i).CAPACITY);
 
     logger.log('Przywrócono locations.', v_scope);
     exception
@@ -665,14 +721,14 @@ procedure p_restore_system_notifications_users
   begin
     logger.log('START', v_scope, null, v_params);
 
-    select c001, c002, c003, c004
+    select c001, c002, c003
     BULK COLLECT INTO v_system_notifications_users_backup
     FROM APEX_collections
     WHERE collection_name = 'SYSTEM_NOTIFICATIONS_USERS_BACKUP'; 
       
     FORALL i IN 1..v_system_notifications_users_backup.COUNT
-    insert into SYSTEM_NOTIFICATIONS_USERS (ID, USER_NAME, EMAIL, CREATE_DATE)
-    values (v_system_notifications_users_backup(i).ID, v_system_notifications_users_backup(i).USER_NAME, v_system_notifications_users_backup(i).EMAIL, v_system_notifications_users_backup(i).CREATE_DATE);
+    insert into SYSTEM_NOTIFICATIONS_USERS (ID, USER_NAME, EMAIL)
+    values (v_system_notifications_users_backup(i).ID, v_system_notifications_users_backup(i).USER_NAME, v_system_notifications_users_backup(i).EMAIL);
 
     logger.log('Przywrócono system_notifications_users.', v_scope);
     exception
@@ -691,14 +747,14 @@ procedure p_restore_sections
   begin
     logger.log('START', v_scope, null, v_params);
 
-    select c001, c002, c003
+    select c001, c002
     BULK COLLECT INTO v_sections_backup
     FROM APEX_collections
     WHERE collection_name = 'SECTIONS_BACKUP'; 
       
     FORALL i IN 1..v_sections_backup.COUNT
-    insert into SECTIONS (SECTION, DESCRIPTION, CREATE_DATE)
-    values (v_sections_backup(i).SECTION, v_sections_backup(i).DESCRIPTION, v_sections_backup(i).CREATE_DATE);
+    insert into SECTIONS (SECTION, DESCRIPTION)
+    values (v_sections_backup(i).SECTION, v_sections_backup(i).DESCRIPTION);
 
     logger.log('Przywrócono sections.', v_scope);
     exception
@@ -722,7 +778,7 @@ procedure p_restore_notifications
     WHERE collection_name = 'NOTIFICATIONS_BACKUP'; 
       
     FORALL i IN 1..v_notifications_backup.COUNT
-    insert into NOTIFICATIONS (ID, NOTIFICATION_TEXT, EMAIL_HTML_BODY, RECEIVER, EMAIL, TYPE, READ, SENT, CREATE_DATE, EMAIL_SUBJECT, EMAIL_PLAIN_BODY)
+    insert into NOTIFICATIONS (ID, NOTIFICATION_TEXT, EMAIL_HTML_BODY, RECEIVER, EMAIL, TYPE, READ, SENT, EMAIL_SUBJECT, EMAIL_PLAIN_BODY, DATE_SENT)
     values (v_notifications_backup(i).ID, 
             v_notifications_backup(i).NOTIFICATION_TEXT,
             v_notifications_backup(i).EMAIL_HTML_BODY, 
@@ -731,9 +787,9 @@ procedure p_restore_notifications
             v_notifications_backup(i).TYPE, 
             v_notifications_backup(i).READ,
             v_notifications_backup(i).SENT, 
-            v_notifications_backup(i).CREATE_DATE,
             v_notifications_backup(i).EMAIL_SUBJECT,
-            v_notifications_backup(i).EMAIL_PLAIN_BODY 
+            v_notifications_backup(i).EMAIL_PLAIN_BODY,
+            v_notifications_backup(i).DATE_SENT
             );
 
     logger.log('Przywrócono notifications.', v_scope);
@@ -753,15 +809,15 @@ procedure p_restore_lending
   begin
     logger.log('START', v_scope, null, v_params);
 
-    select c001, c002, c003, c004, c005, c006, c007
+    select c001, c002, c003, c004, c005, c006
     BULK COLLECT INTO v_lending_backup
     FROM APEX_collections
     WHERE collection_name = 'LENDING_BACKUP'; 
     
     FORALL i IN 1..v_lending_backup.COUNT
-    insert into BOOK_LENDING (ID, BOOK_ID, START_DATE, END_DATE, PERSON, EMAIL, CREATE_DATE)
+    insert into BOOK_LENDING (ID, BOOK_ID, START_DATE, END_DATE, PERSON, EMAIL)
     values (v_lending_backup(i).ID, v_lending_backup(i).BOOK_ID, v_lending_backup(i).START_DATE, 
-            v_lending_backup(i).END_DATE, v_lending_backup(i).PERSON, v_lending_backup(i).EMAIL,v_lending_backup(i).CREATE_DATE);
+            v_lending_backup(i).END_DATE, v_lending_backup(i).PERSON, v_lending_backup(i).EMAIL);
 
     logger.log('Przywrócono lending.', v_scope);
   exception
@@ -778,15 +834,15 @@ procedure p_restore_history
   begin
     logger.log('START', v_scope, null, v_params);
 
-    select c001, c002, c003, c004, c005, c006, c007, c008
+    select c001, c002, c003, c004, c005, c006, c007
     BULK COLLECT INTO v_history_backup
     FROM APEX_collections
     WHERE collection_name = 'HISTORY_BACKUP'; 
     
     FORALL i IN 1..v_history_backup.COUNT
-    insert into HISTORY (ID, ACTION_ID, BOOK_ID, USER_NAME, ACTION_DATE, WISHBOOK_ID, SECTION, CREATE_DATE)
+    insert into HISTORY (ID, ACTION_ID, BOOK_ID, USER_NAME, ACTION_DATE, WISHBOOK_ID, SECTION)
     values (v_history_backup(i).ID, v_history_backup(i).ACTION_ID, v_history_backup(i).BOOK_ID, v_history_backup(i).USER_NAME, 
-            v_history_backup(i).ACTION_DATE, v_history_backup(i).wishbook_id, v_history_backup(i).section, v_history_backup(i).create_date);
+            v_history_backup(i).ACTION_DATE, v_history_backup(i).wishbook_id, v_history_backup(i).section);
     
 
     logger.log('Przywrócono history.', v_scope);
@@ -805,14 +861,14 @@ procedure p_restore_genres
   begin
     logger.log('START', v_scope, null, v_params);
 
-      select c001, c002, c003
+      select c001, c002
       BULK COLLECT INTO v_genres_backup
       FROM APEX_collections
       WHERE collection_name = 'GENRES_BACKUP'; 
       
       FORALL i IN 1..v_genres_backup.COUNT
-      insert into BOOK_GENRES (ID, NAME, CREATE_DATE)
-      values (v_genres_backup(i).ID, v_genres_backup(i).NAME, v_genres_backup(i).CREATE_DATE);
+      insert into BOOK_GENRES (ID, NAME)
+      values (v_genres_backup(i).ID, v_genres_backup(i).NAME);
       
 
       logger.log('Przywrócono genres.', v_scope);
@@ -831,19 +887,19 @@ procedure p_restore_books
   begin
     logger.log('START', v_scope, null, v_params);
 
-    select c001, c002, c003, c004, c005, c006, c007, c008, c009, c011, c012, c013, c014, c015, c016
+    select c001, c002, c003, c004, c005, c006, c007, c008, c009, c011, c012, c013, c014, c015
     BULK COLLECT INTO v_books_backup
     FROM APEX_collections
     WHERE collection_name = 'BOOKS_BACKUP'; 
     
     FORALL i IN 1..v_books_backup.COUNT
-    INSERT INTO BOOKS (ID, TITLE, AUTHOR, ISBN, YEAR, GENRE_ID, LOCATION_ID, SCORE, DESCRIPTION, MIME_TYPE, FILE_NAME, DELETED, PUBLISHER, LANGUAGE, CREATE_DATE)
+    INSERT INTO BOOKS (ID, TITLE, AUTHOR, ISBN, YEAR, GENRE_ID, LOCATION_ID, SCORE, DESCRIPTION, MIME_TYPE, FILE_NAME, DELETED, PUBLISHER, LANGUAGE)
     VALUES (
       v_books_backup(i).ID, v_books_backup(i).TITLE, v_books_backup(i).AUTHOR,
       v_books_backup(i).ISBN, v_books_backup(i).YEAR, v_books_backup(i).GENRE_ID,
       v_books_backup(i).LOCATION_ID, v_books_backup(i).SCORE, v_books_backup(i).DESCRIPTION,
       v_books_backup(i).MIME_TYPE, v_books_backup(i).FILE_NAME,
-      v_books_backup(i).DELETED, v_books_backup(i).PUBLISHER, v_books_backup(i).LANGUAGE, v_books_backup(i).CREATE_DATE
+      v_books_backup(i).DELETED, v_books_backup(i).PUBLISHER, v_books_backup(i).LANGUAGE
       );
 
     SELECT * 
@@ -873,14 +929,14 @@ procedure p_restore_actions
   begin
     logger.log('START', v_scope, null, v_params);
 
-    select c001, c002, c003
+    select c001, c002
     BULK COLLECT INTO v_actions_backup
     FROM APEX_collections
     WHERE collection_name = 'ACTIONS_BACKUP'; 
 
     FORALL i IN 1..v_actions_backup.COUNT
-    insert into ACTIONS (ACTION, DESCRIPTION, CREATE_DATE)
-    values (v_actions_backup(i).ACTION, v_actions_backup(i).DESCRIPTION, v_actions_backup(i).CREATE_DATE);
+    insert into ACTIONS (ACTION, DESCRIPTION)
+    values (v_actions_backup(i).ACTION, v_actions_backup(i).DESCRIPTION);
 
 
     logger.log('Przywrócono actions.', v_scope);
@@ -898,21 +954,20 @@ procedure p_restore_wishlist_books
   begin
     logger.log('START', v_scope, null, v_params);
 
-    select c001, c002, c003, c004, c005, c006, c007, c008
+    select c001, c002, c003, c004, c005, c006, c007
     BULK COLLECT INTO v_wishlist_books_backup
     FROM APEX_collections
     WHERE collection_name = 'WISHLIST_BOOKS_BACKUP'; 
 
     FORALL i IN 1..v_wishlist_books_backup.COUNT
-    insert into WISHLIST_BOOKS (ID, TITLE, AUTHOR, ISBN, LINK, DESIRED_PRICE, EMAIL, CREATE_DATE)
+    insert into WISHLIST_BOOKS (ID, TITLE, AUTHOR, ISBN, LINK, DESIRED_PRICE, EMAIL)
     values (v_wishlist_books_backup(i).ID,
             v_wishlist_books_backup(i).TITLE,
             v_wishlist_books_backup(i).AUTHOR,
             v_wishlist_books_backup(i).ISBN,
             v_wishlist_books_backup(i).LINK,
             v_wishlist_books_backup(i).DESIRED_PRICE,
-            v_wishlist_books_backup(i).EMAIL,
-            v_wishlist_books_backup(i).CREATE_DATE
+            v_wishlist_books_backup(i).EMAIL
             );
 
 
@@ -931,14 +986,14 @@ procedure p_restore_wishlist_prices
   begin
     logger.log('START', v_scope, null, v_params);
 
-    select c001, c002, c003, c004, c005
+    select c001, c002, c003, c004
     BULK COLLECT INTO v_wishlist_prices_backup
     FROM APEX_collections
     WHERE collection_name = 'WISHLIST_PRICES_BACKUP'; 
 
     FORALL i IN 1..v_wishlist_prices_backup.COUNT
-    insert into WISHLIST_PRICES (ID, WISHBOOK_ID, PRICE, TIME, CREATE_DATE)
-    values (v_wishlist_prices_backup(i).ID, v_wishlist_prices_backup(i).WISHBOOK_ID, v_wishlist_prices_backup(i).PRICE, v_wishlist_prices_backup(i).TIME, v_wishlist_prices_backup(i).CREATE_DATE);
+    insert into WISHLIST_PRICES (ID, WISHBOOK_ID, PRICE, TIME)
+    values (v_wishlist_prices_backup(i).ID, v_wishlist_prices_backup(i).WISHBOOK_ID, v_wishlist_prices_backup(i).PRICE, v_wishlist_prices_backup(i).TIME);
 
 
     logger.log('Przywrócono wishlist_prices.', v_scope);

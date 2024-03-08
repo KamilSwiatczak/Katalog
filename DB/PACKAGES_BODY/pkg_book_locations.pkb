@@ -5,7 +5,7 @@ TYPE locations_table_type IS RECORD(
   id locations.id%TYPE,
   name locations.name%type,
   current_count number,
-  max_count locations.max_spaces%type
+  max_count locations.capacity%type
 );
 TYPE locations_table IS TABLE OF locations_table_type;
 
@@ -93,11 +93,11 @@ function f_check_if_full
   begin
     logger.log('START', v_scope, null, v_params);
 
-    select l.id, l.name, count(b.id), max_spaces 
+    select l.id, l.name, count(b.id), capacity 
     bulk collect into v_table
     from locations l 
     left join books b on l.id = b.location_id 
-    group by l.id, l.name, max_spaces;
+    group by l.id, l.name, capacity;
 
 
     for i in v_table.first..v_table.last 
@@ -106,6 +106,7 @@ function f_check_if_full
       if v_table(i).current_count > v_table(i).max_count then 
         v_return.extend();
         v_return(v_return.last) := v_table(i).id;
+        logger.log(v_table(i).id, v_scope);
       end if;
     end loop;
     logger.log('END', v_scope);
