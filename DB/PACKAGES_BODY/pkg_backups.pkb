@@ -39,13 +39,14 @@ as
     isbn wishlist_books.isbn%TYPE, 
     link wishlist_books.link%TYPE, 
     desired_price wishlist_books.desired_price%TYPE, 
-    email wishlist_books.email%TYPE);
+    email wishlist_books.email%TYPE,
+    date_added wishlist_books.date_added%TYPE);
   TYPE wishlist_books_table_type IS TABLE OF wishlist_books_record_type;
   TYPE wishlist_prices_record_type IS RECORD(
     id wishlist_prices.id%TYPE, 
     wishbook_id wishlist_prices.wishbook_id%TYPE, 
     price wishlist_prices.price%TYPE, 
-    time wishlist_prices.time%TYPE);
+    date_added wishlist_prices.date_added%TYPE);
   TYPE wishlist_prices_table_type IS TABLE OF wishlist_prices_record_type;
   TYPE sections_record_type IS RECORD(
     section sections.section%type, 
@@ -83,7 +84,8 @@ as
     FILE_NAME    books.FILE_NAME%TYPE,
     deleted      books.DELETED%TYPE,
     publisher    books.PUBLISHER%TYPE,
-    language     books.LANGUAGE%TYPE);
+    language     books.LANGUAGE%TYPE,
+    date_added   books.date_added%TYPE);
   TYPE books_table_type IS TABLE OF books_record_type;
 
 
@@ -296,7 +298,7 @@ PROCEDURE p_books_export as
     logger.log('START', v_scope, null, v_params);
     v_context := apex_exec.open_query_context(
         p_location    => apex_exec.c_location_local_db,
-        p_sql_query   => 'select id, title, author, isbn, year, genre_id, location_id, score, description, cover, mime_type, file_name, deleted, publisher, language from books');
+        p_sql_query   => 'select id, title, author, isbn, year, genre_id, location_id, score, description, cover, mime_type, file_name, deleted, publisher, language, date_added from books');
 
     v_export := apex_data_export.export (
                     p_context   => v_context,
@@ -396,7 +398,7 @@ PROCEDURE p_wishlist_books_export as
     logger.log('START', v_scope, null, v_params);
     v_context := apex_exec.open_query_context(
         p_location    => apex_exec.c_location_local_db,
-        p_sql_query   => 'select id, title, author, isbn, link, desired_price, email from wishlist_books');
+        p_sql_query   => 'select id, title, author, isbn, link, desired_price, email, date_added from wishlist_books');
 
     v_export := apex_data_export.export (
                     p_context   => v_context,
@@ -428,7 +430,7 @@ PROCEDURE p_wishlist_prices_export as
     logger.log('START', v_scope, null, v_params);
     v_context := apex_exec.open_query_context(
         p_location    => apex_exec.c_location_local_db,
-        p_sql_query   => 'select id, wishbook_id, price, time from wishlist_prices');
+        p_sql_query   => 'select id, wishbook_id, price, date_added from wishlist_prices');
 
     v_export := apex_data_export.export (
                     p_context   => v_context,
@@ -887,19 +889,19 @@ procedure p_restore_books
   begin
     logger.log('START', v_scope, null, v_params);
 
-    select c001, c002, c003, c004, c005, c006, c007, c008, c009, c011, c012, c013, c014, c015
+    select c001, c002, c003, c004, c005, c006, c007, c008, c009, c011, c012, c013, c014, c015, c016
     BULK COLLECT INTO v_books_backup
     FROM APEX_collections
     WHERE collection_name = 'BOOKS_BACKUP'; 
     
     FORALL i IN 1..v_books_backup.COUNT
-    INSERT INTO BOOKS (ID, TITLE, AUTHOR, ISBN, YEAR, GENRE_ID, LOCATION_ID, SCORE, DESCRIPTION, MIME_TYPE, FILE_NAME, DELETED, PUBLISHER, LANGUAGE)
+    INSERT INTO BOOKS (ID, TITLE, AUTHOR, ISBN, YEAR, GENRE_ID, LOCATION_ID, SCORE, DESCRIPTION, MIME_TYPE, FILE_NAME, DELETED, PUBLISHER, LANGUAGE, DATE_ADDED)
     VALUES (
       v_books_backup(i).ID, v_books_backup(i).TITLE, v_books_backup(i).AUTHOR,
       v_books_backup(i).ISBN, v_books_backup(i).YEAR, v_books_backup(i).GENRE_ID,
       v_books_backup(i).LOCATION_ID, v_books_backup(i).SCORE, v_books_backup(i).DESCRIPTION,
       v_books_backup(i).MIME_TYPE, v_books_backup(i).FILE_NAME,
-      v_books_backup(i).DELETED, v_books_backup(i).PUBLISHER, v_books_backup(i).LANGUAGE
+      v_books_backup(i).DELETED, v_books_backup(i).PUBLISHER, v_books_backup(i).LANGUAGE, v_books_backup(i).DATE_ADDED
       );
 
     SELECT * 
@@ -954,20 +956,21 @@ procedure p_restore_wishlist_books
   begin
     logger.log('START', v_scope, null, v_params);
 
-    select c001, c002, c003, c004, c005, c006, c007
+    select c001, c002, c003, c004, c005, c006, c007, c008
     BULK COLLECT INTO v_wishlist_books_backup
     FROM APEX_collections
     WHERE collection_name = 'WISHLIST_BOOKS_BACKUP'; 
 
     FORALL i IN 1..v_wishlist_books_backup.COUNT
-    insert into WISHLIST_BOOKS (ID, TITLE, AUTHOR, ISBN, LINK, DESIRED_PRICE, EMAIL)
+    insert into WISHLIST_BOOKS (ID, TITLE, AUTHOR, ISBN, LINK, DESIRED_PRICE, EMAIL, DATE_ADDED)
     values (v_wishlist_books_backup(i).ID,
             v_wishlist_books_backup(i).TITLE,
             v_wishlist_books_backup(i).AUTHOR,
             v_wishlist_books_backup(i).ISBN,
             v_wishlist_books_backup(i).LINK,
             v_wishlist_books_backup(i).DESIRED_PRICE,
-            v_wishlist_books_backup(i).EMAIL
+            v_wishlist_books_backup(i).EMAIL,
+            v_wishlist_books_backup(i).DATE_ADDED
             );
 
 
@@ -992,8 +995,8 @@ procedure p_restore_wishlist_prices
     WHERE collection_name = 'WISHLIST_PRICES_BACKUP'; 
 
     FORALL i IN 1..v_wishlist_prices_backup.COUNT
-    insert into WISHLIST_PRICES (ID, WISHBOOK_ID, PRICE, TIME)
-    values (v_wishlist_prices_backup(i).ID, v_wishlist_prices_backup(i).WISHBOOK_ID, v_wishlist_prices_backup(i).PRICE, v_wishlist_prices_backup(i).TIME);
+    insert into WISHLIST_PRICES (ID, WISHBOOK_ID, PRICE, DATE_ADDED)
+    values (v_wishlist_prices_backup(i).ID, v_wishlist_prices_backup(i).WISHBOOK_ID, v_wishlist_prices_backup(i).PRICE, v_wishlist_prices_backup(i).DATE_ADDED);
 
 
     logger.log('Przywrócono wishlist_prices.', v_scope);

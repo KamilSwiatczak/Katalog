@@ -72,8 +72,8 @@ procedure p_wishlist_books_create_update(
     logger.log('START', v_scope, null, v_params);
 
     if pi_id is null then
-      INSERT INTO wishlist_books (title, author, isbn, link, desired_price, email)
-      VALUES (pi_title, pi_author, pi_isbn, pi_link, pi_desired_price, pi_email)
+      INSERT INTO wishlist_books (title, author, isbn, link, desired_price, email, date_added)
+      VALUES (pi_title, pi_author, pi_isbn, pi_link, pi_desired_price, pi_email, SYSDATE)
       returning id into v_id;
       pkg_history.p_history_log(pi_action => 'NEW_WISHLIST_BOOK', pi_wishbook_id => v_id, pi_book_id => null, pi_section => 'WISHLIST_BOOKS');
       logger.log('Książka '||pi_title||' została dodana do listy życzeń.', v_scope);
@@ -111,7 +111,7 @@ procedure p_wishlist_prices_create_update(
     logger.log('START', v_scope, null, v_params);
 
     if pi_id is null then
-      INSERT INTO wishlist_prices (wishbook_id, price, time)
+      INSERT INTO wishlist_prices (wishbook_id, price, date_added)
       VALUES (pi_wishbook_id, pi_price, SYSDATE);
       pkg_history.p_history_log(pi_action => 'NEW_WISHLIST_PRICE', pi_wishbook_id => pi_wishbook_id, pi_book_id => null, pi_section => 'WISHLIST_BOOKS');
       logger.log('Cena '||pi_wishbook_id||' została dodana.', v_scope);
@@ -219,7 +219,7 @@ begin
   logger.log('START', v_scope, null, v_params);
   
   select PRICE into v_new_price from WISHLIST_PRICES 
-  where WISHBOOK_ID = pi_wishbook_id and TRUNC(TIME, 'DD') = TRUNC(SYSDATE, 'DD')
+  where WISHBOOK_ID = pi_wishbook_id and TRUNC(DATE_ADDED, 'DD') = TRUNC(SYSDATE, 'DD')
   order by id desc
   fetch FIRST 1 rows only;
 
@@ -231,7 +231,7 @@ begin
     SELECT PRICE
     FROM WISHLIST_PRICES
     WHERE WISHBOOK_ID = pi_wishbook_id
-    ORDER BY TIME DESC
+    ORDER BY DATE_ADDED DESC
     OFFSET 1 ROW
     FETCH FIRST 30 ROWS ONLY
   );

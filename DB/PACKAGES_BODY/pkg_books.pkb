@@ -46,8 +46,8 @@ procedure p_book_create_update(
     logger.log('START', v_scope, null, v_params);
 
     if pi_id is null then
-      INSERT INTO BOOKS (title, author, isbn, year, genre_id, location_id, score, description, cover, MIME_TYPE, FILE_NAME, PUBLISHER, LANGUAGE)
-      VALUES (pi_title, pi_author, pi_isbn, pi_year, pi_genre_id, pi_location_id, pi_score, pi_description, pi_cover, pi_mime, pi_file_name, pi_publisher, pi_language)
+      INSERT INTO BOOKS (title, author, isbn, year, genre_id, location_id, score, description, cover, MIME_TYPE, FILE_NAME, PUBLISHER, LANGUAGE, DATE_ADDED)
+      VALUES (pi_title, pi_author, pi_isbn, pi_year, pi_genre_id, pi_location_id, pi_score, pi_description, pi_cover, pi_mime, pi_file_name, pi_publisher, pi_language, SYSDATE)
       returning id into v_id;
       pkg_history.p_history_log(pi_action => 'NEW', pi_book_id => v_id, pi_wishbook_id => null, pi_section => 'LIBRARY_BOOKS');
       logger.log('Książka '||pi_title||' została dodana.', v_scope);
