@@ -14,8 +14,7 @@ procedure p_wishlist_books_create_update(
       pi_author in wishlist_books.author%type,
       pi_isbn in wishlist_books.isbn%type,
       pi_link in wishlist_books.link%type,
-      pi_desired_price in wishlist_books.desired_price%type,
-      pi_email in wishlist_books.email%type
+      pi_desired_price in wishlist_books.desired_price%type
 );
 procedure p_wishlist_prices_create_update(
       pi_id in wishlist_prices.id%type,

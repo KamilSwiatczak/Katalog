@@ -712,7 +712,7 @@ procedure p_restore_locations
       when others then
         logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
         raise;
-  end p_restore_locations;
+end p_restore_locations;
 
 procedure p_restore_system_notifications_users
   as
@@ -737,7 +737,7 @@ procedure p_restore_system_notifications_users
       when others then
         logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
         raise;
-  end p_restore_system_notifications_users;
+end p_restore_system_notifications_users;
 
 
 procedure p_restore_sections
@@ -763,7 +763,7 @@ procedure p_restore_sections
       when others then
         logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
         raise;
-  end p_restore_sections;
+end p_restore_sections;
 
 procedure p_restore_notifications
   as
@@ -799,7 +799,7 @@ procedure p_restore_notifications
       when others then
         logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
         raise;
-  end p_restore_notifications;
+end p_restore_notifications;
 
 
 procedure p_restore_lending
@@ -1028,7 +1028,7 @@ procedure p_add_external_file(
     when others then
       logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
       raise;
-  end p_add_external_file;
+end p_add_external_file;
 
 
 procedure p_remove_backup(
@@ -1050,7 +1050,7 @@ procedure p_remove_backup(
     when others then
       logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
       raise;
-  end p_remove_backup;
+end p_remove_backup;
 
   
 

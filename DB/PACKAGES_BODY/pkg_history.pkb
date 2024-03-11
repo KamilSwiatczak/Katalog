@@ -8,62 +8,62 @@ as
 
 function f_action_verify(
   pi_action in actions.action%type)
-return
-  boolean
-as
-  v_scope logger_logs.scope%type := gc_scope_prefix || 'f_action_verify';
-  v_params logger.tab_param;
-  v_count number;
-  v_return boolean;
-begin
-  logger.append_param(v_params, 'pi_action', pi_action);
-  logger.log('START', v_scope, null, v_params);
+  return
+    boolean
+  as
+    v_scope logger_logs.scope%type := gc_scope_prefix || 'f_action_verify';
+    v_params logger.tab_param;
+    v_count number;
+    v_return boolean;
+  begin
+    logger.append_param(v_params, 'pi_action', pi_action);
+    logger.log('START', v_scope, null, v_params);
 
-  select count(*) 
-  into v_count
-  from actions
-  where action = pi_action;
-  if v_count = 1 then 
-    v_return := true;
-  else
-    v_return := false;
-  end if;
-  logger.log('END', v_scope);
-  return v_return;
-exception
-  when others then
-    logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
-    raise;
+    select count(*) 
+    into v_count
+    from actions
+    where action = pi_action;
+    if v_count = 1 then 
+      v_return := true;
+    else
+      v_return := false;
+    end if;
+    logger.log('END', v_scope);
+    return v_return;
+  exception
+    when others then
+      logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
+      raise;
 end f_action_verify;
 
   
 
 procedure p_history_log(
-  pi_action in history.action_id%type,
-  pi_book_id in history.book_id%type,
-  pi_wishbook_id in history.wishbook_id%type,
-  pi_section in history.section%type
-  )
-as
-  v_scope logger_logs.scope%type := gc_scope_prefix || 'p_history_log';
-  v_params logger.tab_param;
+    pi_action in history.action_id%type,
+    pi_book_id in history.book_id%type,
+    pi_wishbook_id in history.wishbook_id%type,
+    pi_section in history.section%type
+    )
+  as
+    v_scope logger_logs.scope%type := gc_scope_prefix || 'p_history_log';
+    v_params logger.tab_param;
 
-begin
+  begin
 
-  logger.append_param(v_params, 'pi_action', pi_action);
-  logger.append_param(v_params, 'pi_book_id', pi_book_id);
-  logger.log('START', v_scope, null, v_params);
-  if f_action_verify(pi_action) then
-    INSERT INTO history (action_id, book_id, user_name, wishbook_id, section, action_date)
-    VALUES (pi_action, pi_book_id, apex_custom_auth.get_username, pi_wishbook_id, pi_section, SYSDATE);
-  else 
-    RAISE_APPLICATION_ERROR(-20006, 'Błędna akcja'); 
-  end if;
-  logger.log('END', v_scope);
-exception
-  when others then
-    logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
-    raise;
+    logger.append_param(v_params, 'pi_action', pi_action);
+    logger.append_param(v_params, 'pi_book_id', pi_book_id);
+    logger.log('START', v_scope, null, v_params);
+    if f_action_verify(pi_action) then
+      INSERT INTO history (action_id, book_id, user_name, wishbook_id, section, action_date)
+      VALUES (pi_action, pi_book_id, apex_custom_auth.get_username, pi_wishbook_id, pi_section, SYSDATE);
+    else 
+      RAISE_APPLICATION_ERROR(-20006, 'Błędna akcja'); 
+    end if;
+    logger.log('END', v_scope);
+  exception
+    when others then
+      logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
+      raise;
 end p_history_log;
 
 
