@@ -39,7 +39,6 @@ as
     isbn wishlist_books.isbn%TYPE, 
     link wishlist_books.link%TYPE, 
     desired_price wishlist_books.desired_price%TYPE, 
-    email wishlist_books.email%TYPE,
     date_added wishlist_books.date_added%TYPE);
   TYPE wishlist_books_table_type IS TABLE OF wishlist_books_record_type;
   TYPE wishlist_prices_record_type IS RECORD(
@@ -108,15 +107,13 @@ PROCEDURE p_genres_export
 
     apex_exec.close( v_context );
     
-    insert into my_temp_files (file_name, file_content, mime_type)
-    values (v_export.file_name, v_export.content_blob, v_export.mime_type);
+    pkg_temp_files.p_insert_files(v_export.file_name, v_export.content_blob, v_export.mime_type);
 
     logger.log('Eksportowano book_lending', v_scope);
 
   EXCEPTION
     when others THEN
         logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
-        raise;
         apex_exec.close( v_context );
         raise;
 END p_genres_export;  
@@ -143,15 +140,13 @@ PROCEDURE p_actions_export
 
     apex_exec.close( v_context );
     
-    insert into my_temp_files (file_name, file_content, mime_type)
-    values (v_export.file_name, v_export.content_blob, v_export.mime_type);
+    pkg_temp_files.p_insert_files(v_export.file_name, v_export.content_blob, v_export.mime_type);
 
     logger.log('Eksportowano actions', v_scope);
 
   EXCEPTION
     when others THEN
         logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
-        raise;
         apex_exec.close( v_context );
         raise;
 END p_actions_export;  
@@ -178,15 +173,13 @@ PROCEDURE p_lending_export
 
     apex_exec.close( v_context );
     
-    insert into my_temp_files (file_name, file_content, mime_type)
-    values (v_export.file_name, v_export.content_blob, v_export.mime_type);
+    pkg_temp_files.p_insert_files(v_export.file_name, v_export.content_blob, v_export.mime_type);
 
     logger.log('Eksportowano book_lending', v_scope);
 
   EXCEPTION
     when others THEN
         logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
-        raise;
         apex_exec.close( v_context );
         raise;
 END p_lending_export;
@@ -212,15 +205,13 @@ PROCEDURE p_location_export as
 
     apex_exec.close( v_context );
     
-    insert into my_temp_files (file_name, file_content, mime_type)
-    values (v_export.file_name, v_export.content_blob, v_export.mime_type);
+    pkg_temp_files.p_insert_files(v_export.file_name, v_export.content_blob, v_export.mime_type);
 
     logger.log('Eksportowano locations', v_scope);
 
   EXCEPTION
     when others THEN
         logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
-        raise;
         apex_exec.close( v_context );
         raise;
 END p_location_export;    
@@ -244,15 +235,13 @@ PROCEDURE p_sections_export
 
     apex_exec.close( v_context );
     
-    insert into my_temp_files (file_name, file_content, mime_type)
-    values (v_export.file_name, v_export.content_blob, v_export.mime_type);
+    pkg_temp_files.p_insert_files(v_export.file_name, v_export.content_blob, v_export.mime_type);
 
     logger.log('Eksportowano sections', v_scope);
 
   EXCEPTION
     when others THEN
         logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
-        raise;
         apex_exec.close( v_context );
         raise;
 END p_sections_export; 
@@ -276,15 +265,13 @@ PROCEDURE p_notifications_export
 
     apex_exec.close( v_context );
     
-    insert into my_temp_files (file_name, file_content, mime_type)
-    values (v_export.file_name, v_export.content_blob, v_export.mime_type);
+    pkg_temp_files.p_insert_files(v_export.file_name, v_export.content_blob, v_export.mime_type);
 
     logger.log('Eksportowano notifications', v_scope);
 
   EXCEPTION
     when others THEN
         logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
-        raise;
         apex_exec.close( v_context );
         raise;
 END p_notifications_export; 
@@ -308,15 +295,13 @@ PROCEDURE p_books_export as
 
     apex_exec.close( v_context );
     
-    insert into my_temp_files (file_name, file_content, mime_type)
-    values (v_export.file_name, v_export.content_blob, v_export.mime_type);
+    pkg_temp_files.p_insert_files(v_export.file_name, v_export.content_blob, v_export.mime_type);
 
     logger.log('Eksportowano books', v_scope);
 
   EXCEPTION
     when others THEN
         logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
-        raise;
         apex_exec.close( v_context );
         raise;
 END p_books_export;
@@ -342,15 +327,13 @@ PROCEDURE p_backups_export as
 
     apex_exec.close( v_context );
     
-    insert into my_temp_files (file_name, file_content, mime_type)
-    values (v_export.file_name, v_export.content_blob, v_export.mime_type);
+    pkg_temp_files.p_insert_files(v_export.file_name, v_export.content_blob, v_export.mime_type);
 
     logger.log('Eksportowano backups', v_scope);
 
   EXCEPTION
     when others THEN
         logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
-        raise;
         apex_exec.close( v_context );
         raise;
 END p_backups_export;
@@ -376,15 +359,13 @@ PROCEDURE p_history_export as
 
     apex_exec.close( v_context );
     
-    insert into my_temp_files (file_name, file_content, mime_type)
-    values (v_export.file_name, v_export.content_blob, v_export.mime_type);
+    pkg_temp_files.p_insert_files(v_export.file_name, v_export.content_blob, v_export.mime_type);
 
     logger.log('Eksportowano history', v_scope);
 
   EXCEPTION
     when others THEN
         logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
-        raise;
         apex_exec.close( v_context );
         raise;
 END p_history_export;
@@ -398,7 +379,7 @@ PROCEDURE p_wishlist_books_export as
     logger.log('START', v_scope, null, v_params);
     v_context := apex_exec.open_query_context(
         p_location    => apex_exec.c_location_local_db,
-        p_sql_query   => 'select id, title, author, isbn, link, desired_price, email, date_added from wishlist_books');
+        p_sql_query   => 'select id, title, author, isbn, link, desired_price, date_added from wishlist_books');
 
     v_export := apex_data_export.export (
                     p_context   => v_context,
@@ -407,15 +388,13 @@ PROCEDURE p_wishlist_books_export as
 
     apex_exec.close( v_context );
     
-    insert into my_temp_files (file_name, file_content, mime_type)
-    values (v_export.file_name, v_export.content_blob, v_export.mime_type);
+    pkg_temp_files.p_insert_files(v_export.file_name, v_export.content_blob, v_export.mime_type);
 
     logger.log('Eksportowano wishlist_books', v_scope);
 
   EXCEPTION
     when others THEN
         logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
-        raise;
         apex_exec.close( v_context );
         raise;
 END p_wishlist_books_export;
@@ -439,15 +418,13 @@ PROCEDURE p_wishlist_prices_export as
 
     apex_exec.close( v_context );
     
-    insert into my_temp_files (file_name, file_content, mime_type)
-    values (v_export.file_name, v_export.content_blob, v_export.mime_type);
+    pkg_temp_files.p_insert_files(v_export.file_name, v_export.content_blob, v_export.mime_type);
 
     logger.log('Eksportowano wishlist_prices', v_scope);
 
   EXCEPTION
     when others THEN
         logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
-        raise;
         apex_exec.close( v_context );
         raise;
 END p_wishlist_prices_export;
@@ -470,15 +447,13 @@ PROCEDURE p_system_notifications_users_export as
 
     apex_exec.close( v_context );
     
-    insert into my_temp_files (file_name, file_content, mime_type)
-    values (v_export.file_name, v_export.content_blob, v_export.mime_type);
+    pkg_temp_files.p_insert_files(v_export.file_name, v_export.content_blob, v_export.mime_type);
 
     logger.log('Eksportowano system_notifications_users', v_scope);
 
   EXCEPTION
     when others THEN
         logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
-        raise;
         apex_exec.close( v_context );
         raise;
 END p_system_notifications_users_export;
@@ -491,6 +466,7 @@ procedure p_zip_backup
 
   begin
     logger.log('START', v_scope, null, v_params);
+    
     pkg_backups.p_books_export;
     pkg_backups.p_location_export;
     pkg_backups.p_genres_export;
@@ -503,28 +479,14 @@ procedure p_zip_backup
     pkg_backups.p_notifications_export;
     pkg_backups.p_system_notifications_users_export;    
 
-    for i in (select file_name, file_content
-                  from MY_TEMP_FILES)
-      loop
-          apex_zip.add_file (
-              p_zipped_blob => v_zip_file,
-              p_file_name   => 'tables/'||i.file_name,
-              p_content     => i.file_content);
-      end loop;
-    for c in (select id, title, file_name, cover
-            from BOOKS
-            where cover is not null)
-      loop 
-          apex_zip.add_file (
-              p_zipped_blob => v_zip_file,
-              p_file_name   => 'covers/'||c.id||'_'||c.title||SUBSTR(c.file_name, INSTR(c.file_name, '.', -1)),
-              p_content     => c.cover);
-      end loop;            
-    apex_zip.finish (
-          p_zipped_blob => v_zip_file);
+
+    pkg_temp_files.p_zip_temp_files(po_zipped_blob => v_zip_file);
+
     insert into backups (user_name, backup, mime_type, file_name)
     values (apex_custom_auth.get_username, v_zip_file, 'application/zip', 'backup_'||SYSDATE||'.zip');
-    delete from MY_TEMP_FILES;
+
+    pkg_temp_files.p_clear_temp_files;
+
     logger.log('END', v_scope);
   exception
     when others then
@@ -551,8 +513,7 @@ procedure p_backup_restore(
           v_unzipped_file := apex_zip.get_file_content (
               p_zipped_blob => pi_zip_file,
               p_file_name   => v_files(i));
-          insert into MY_TEMP_FILES (file_name, file_content)
-          values (v_files(i), v_unzipped_file);
+          pkg_temp_files.p_insert_files(v_files(i), v_unzipped_file, null);
         end loop;
     logger.log('END', v_scope);
   exception
@@ -580,17 +541,7 @@ procedure p_RESTORE_FROM_EXISTING_BACKUP(
 
     p_parse_to_collection;
 
-    delete from SYSTEM_NOTIFICATIONS_USERS;
-    delete from NOTIFICATIONS;
-    delete from BOOK_LENDING;
-    delete from HISTORY;
-    delete from BOOKS;
-    delete from LOCATIONS;
-    delete from BOOK_GENRES;
-    delete from ACTIONS;
-    delete from WISHLIST_PRICES;
-    delete from WISHLIST_BOOKS;
-    delete from SECTIONS;
+    p_clear_all_tables;
     
     p_restore_system_notifications_users;
     p_restore_notifications;
@@ -604,7 +555,7 @@ procedure p_RESTORE_FROM_EXISTING_BACKUP(
     p_restore_wishlist_books;
     p_restore_wishlist_prices;
 
-    delete from MY_TEMP_FILES;
+    pkg_temp_files.p_clear_temp_files;
 
     APEX_COLLECTION.TRUNCATE_COLLECTION(
     p_collection_name => 'LOCATIONS_BACKUP');
@@ -956,20 +907,19 @@ procedure p_restore_wishlist_books
   begin
     logger.log('START', v_scope, null, v_params);
 
-    select c001, c002, c003, c004, c005, c006, c007, c008
+    select c001, c002, c003, c004, c005, c006, c007
     BULK COLLECT INTO v_wishlist_books_backup
     FROM APEX_collections
     WHERE collection_name = 'WISHLIST_BOOKS_BACKUP'; 
 
     FORALL i IN 1..v_wishlist_books_backup.COUNT
-    insert into WISHLIST_BOOKS (ID, TITLE, AUTHOR, ISBN, LINK, DESIRED_PRICE, EMAIL, DATE_ADDED)
+    insert into WISHLIST_BOOKS (ID, TITLE, AUTHOR, ISBN, LINK, DESIRED_PRICE, DATE_ADDED)
     values (v_wishlist_books_backup(i).ID,
             v_wishlist_books_backup(i).TITLE,
             v_wishlist_books_backup(i).AUTHOR,
             v_wishlist_books_backup(i).ISBN,
             v_wishlist_books_backup(i).LINK,
             v_wishlist_books_backup(i).DESIRED_PRICE,
-            v_wishlist_books_backup(i).EMAIL,
             v_wishlist_books_backup(i).DATE_ADDED
             );
 
@@ -1052,7 +1002,33 @@ procedure p_remove_backup(
       raise;
 end p_remove_backup;
 
-  
+procedure p_clear_all_tables
+  as
+    v_scope logger_logs.scope%type := gc_scope_prefix || 'p_clear_all_tables';
+    v_params logger.tab_param;
+
+  begin
+
+    logger.log('START', v_scope, null, v_params);
+
+    delete from SYSTEM_NOTIFICATIONS_USERS;
+    delete from NOTIFICATIONS;
+    delete from BOOK_LENDING;
+    delete from HISTORY;
+    delete from BOOKS;
+    delete from LOCATIONS;
+    delete from BOOK_GENRES;
+    delete from ACTIONS;
+    delete from WISHLIST_PRICES;
+    delete from WISHLIST_BOOKS;
+    delete from SECTIONS;
+
+    logger.log('END', v_scope);
+  exception
+    when others then
+      logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
+      raise;
+end p_clear_all_tables;
 
 end pkg_backups;
 /

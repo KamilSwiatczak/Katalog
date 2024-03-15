@@ -15,3 +15,5 @@ prompt ..packages
 @@..\DB\PACKAGES_BODY\pkg_wishlist.pkb;
 @@..\DB\PACKAGES\pkg_notifications.pks;
 @@..\DB\PACKAGES_BODY\pkg_notifications.pkb;
+@@..\DB\PACKAGES\pkg_temp_files.pks;
+@@..\DB\PACKAGES_BODY\pkg_temp_files.pkb;

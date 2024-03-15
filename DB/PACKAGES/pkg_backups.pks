@@ -42,8 +42,8 @@ procedure p_add_external_file(
 procedure p_remove_backup(
   pi_id in backups.id%type
 );
-
+procedure p_clear_all_tables; 
+--except backups and my_temp_files
   
-
 end pkg_backups;
 /
