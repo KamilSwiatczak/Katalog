@@ -79,8 +79,6 @@ as
     location_id  books.location_id%TYPE,
     score        books.score%TYPE,
     description  books.description%TYPE,
-    MIME_TYPE    books.MIME_TYPE%TYPE,
-    FILE_NAME    books.FILE_NAME%TYPE,
     deleted      books.DELETED%TYPE,
     publisher    books.PUBLISHER%TYPE,
     language     books.LANGUAGE%TYPE,
@@ -285,7 +283,7 @@ PROCEDURE p_books_export as
     logger.log('START', v_scope, null, v_params);
     v_context := apex_exec.open_query_context(
         p_location    => apex_exec.c_location_local_db,
-        p_sql_query   => 'select id, title, author, isbn, year, genre_id, location_id, score, description, cover, mime_type, file_name, deleted, publisher, language, date_added from books');
+        p_sql_query   => 'select id, title, author, isbn, year, genre_id, location_id, score, description, deleted, publisher, language, date_added from books');
 
     v_export := apex_data_export.export (
                     p_context   => v_context,
@@ -840,18 +838,17 @@ procedure p_restore_books
   begin
     logger.log('START', v_scope, null, v_params);
 
-    select c001, c002, c003, c004, c005, c006, c007, c008, c009, c011, c012, c013, c014, c015, c016
+    select c001, c002, c003, c004, c005, c006, c007, c008, c009, c011, c012, c013, c014
     BULK COLLECT INTO v_books_backup
     FROM APEX_collections
     WHERE collection_name = 'BOOKS_BACKUP'; 
     
     FORALL i IN 1..v_books_backup.COUNT
-    INSERT INTO BOOKS (ID, TITLE, AUTHOR, ISBN, YEAR, GENRE_ID, LOCATION_ID, SCORE, DESCRIPTION, MIME_TYPE, FILE_NAME, DELETED, PUBLISHER, LANGUAGE, DATE_ADDED)
+    INSERT INTO BOOKS (ID, TITLE, AUTHOR, ISBN, YEAR, GENRE_ID, LOCATION_ID, SCORE, DESCRIPTION, DELETED, PUBLISHER, LANGUAGE, DATE_ADDED)
     VALUES (
       v_books_backup(i).ID, v_books_backup(i).TITLE, v_books_backup(i).AUTHOR,
       v_books_backup(i).ISBN, v_books_backup(i).YEAR, v_books_backup(i).GENRE_ID,
       v_books_backup(i).LOCATION_ID, v_books_backup(i).SCORE, v_books_backup(i).DESCRIPTION,
-      v_books_backup(i).MIME_TYPE, v_books_backup(i).FILE_NAME,
       v_books_backup(i).DELETED, v_books_backup(i).PUBLISHER, v_books_backup(i).LANGUAGE, v_books_backup(i).DATE_ADDED
       );
 

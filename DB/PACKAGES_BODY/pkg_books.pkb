@@ -227,7 +227,7 @@ procedure p_openlibrary_api(
     logger.append_param(v_params, 'pi_isbn', pi_isbn);
     logger.log('START', v_scope, null, v_params);
     v_url := 'https://openlibrary.org/api/volumes/brief/isbn/'||pi_isbn||'.json';
-    v_cover_url := 'https://covers.openlibrary.org/b/isbn/'||pi_isbn||'-S.jpg'; 
+    v_cover_url := 'https://covers.openlibrary.org/b/isbn/'||pi_isbn||'-L.jpg'; 
     v_response := APEX_WEB_SERVICE.MAKE_REST_REQUEST(
         p_url => v_url,
         p_http_method => 'GET'
@@ -308,7 +308,7 @@ procedure p_openlibrary_api(
     END IF;
     IF v_cover IS NOT NULL THEN
       update books
-        set COVER=v_cover, MIME_TYPE='image/jpeg'
+        set COVER=v_cover, MIME_TYPE='image/jpeg', FILE_NAME = REPLACE(v_title, ' ', '_') || '.jpg'
       where ISBN=pi_isbn;
     END IF;
   logger.log('END', v_scope);
@@ -342,7 +342,7 @@ procedure p_openlibrary_api_get_data(
       logger.append_param(v_params, 'pi_isbn', pi_isbn);
       logger.log('START', v_scope, null, v_params);
       v_url := 'https://openlibrary.org/api/volumes/brief/isbn/'||pi_isbn||'.json';
-      v_cover_url := 'https://covers.openlibrary.org/b/isbn/'||pi_isbn||'-S.jpg'; 
+      v_cover_url := 'https://covers.openlibrary.org/b/isbn/'||pi_isbn||'-L.jpg'; 
       v_response := APEX_WEB_SERVICE.MAKE_REST_REQUEST(
           p_url => v_url,
           p_http_method => 'GET'
