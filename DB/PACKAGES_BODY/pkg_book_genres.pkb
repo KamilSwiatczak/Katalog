@@ -12,16 +12,11 @@ function f_create_book_genre(
     v_scope logger_logs.scope%type := gc_scope_prefix || 'f_create_book_genre';
     v_params logger.tab_param;
     v_id books.id%type;
-    v_genre_count number;
   begin
     logger.append_param(v_params, 'pi_name', pi_name);
     logger.log('START', v_scope, null, v_params);
 
-    select count(1) into v_genre_count
-    from BOOK_GENRES
-    where name = pi_name;
-
-    if v_genre_count = 0 then
+    if not f_check_book_genres_exists(pi_name) then
       INSERT INTO BOOK_GENRES (name)
         VALUES (pi_name)
         RETURNING id INTO v_id;
@@ -39,24 +34,45 @@ end f_create_book_genre;
 
 
 
+function f_check_book_genres_exists(
+    pi_name in book_genres.name%type
+  ) return BOOLEAN
+  as
+    v_scope logger_logs.scope%type := gc_scope_prefix || 'f_check_book_genres_exists';
+    v_params logger.tab_param;
+    v_genre_count number;
+  begin
+    logger.append_param(v_params, 'pi_name', pi_name);
+    logger.log('START', v_scope, null, v_params);
+
+    select count(*) into v_genre_count
+    from BOOK_GENRES
+    where name = pi_name;
+
+    logger.log('END', v_scope);
+    return v_genre_count > 0;
+  exception
+    when others then
+      logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
+      raise;
+end f_check_book_genres_exists;
+
+  
+
+
 procedure p_update_book_genre(
         pi_id    in book_genres.id%type,
         pi_name  in book_genres.name%type
       )IS
         v_scope logger_logs.scope%type := gc_scope_prefix || 'p_update_book_genre';
         v_params logger.tab_param;
-        v_genre_count number;
         
     begin
       logger.append_param(v_params, 'pi_id', pi_id);
       logger.append_param(v_params, 'pi_name', pi_name);
       logger.log('START', v_scope, null, v_params);
 
-      select count(1) into v_genre_count
-      from BOOK_GENRES
-      where name = pi_name;
-
-      if v_genre_count = 0 then
+      if not f_check_book_genres_exists(pi_name) then
         UPDATE BOOK_GENRES
         SET name = pi_name
         WHERE id = pi_id;
@@ -138,8 +154,31 @@ procedure p_manage_book_genre(
       raise;
 end p_manage_book_genre;
 
+
+
+function f_check_genre_has_books(
+pi_id in book_genres.id%type) return BOOLEAN
+as
+  v_scope logger_logs.scope%type := gc_scope_prefix || 'f_check_genre_has_books';
+  v_params logger.tab_param;
+  v_number_of_books number;
+begin
+  logger.append_param(v_params, 'pi_id', pi_id);
+  logger.log('START', v_scope, null, v_params);
+
+  select count (*) into v_number_of_books from BOOKS where GENRE_ID = pi_id;
+
+  logger.log('END', v_scope);
+  return v_number_of_books > 0;
+exception
+  when others then
+    logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
+    raise;
+end f_check_genre_has_books;
+
   
-  
+
+
   -- usuwanie wszystkich pustych gatunków stare
 procedure p_delete_empty_genres
   as
@@ -150,10 +189,7 @@ procedure p_delete_empty_genres
     logger.log('START', v_scope, null, v_params);
   
     for row in (select * from BOOK_GENRES)  loop
-      logger.log(row.name, v_scope);
-      select count (*) into v_number_of_books from BOOKS where GENRE_ID = row.id;
-      logger.log('W rodzaju '|| row.name ||' jest '|| v_number_of_books|| ' książek.', v_scope);
-      if v_number_of_books = 0 then 
+      if not f_check_genre_has_books(row.id) then 
         delete from BOOK_GENRES
          where ID = row.id;
       end if;

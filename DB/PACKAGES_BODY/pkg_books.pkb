@@ -134,7 +134,8 @@ procedure p_delete_book(
     FROM history
     WHERE book_id = pi_id;
     
-    if v_row_count <= 1 THEN 
+    --usuwamy z bazy w przypadku kiedy książka była jedynie dodana, nie było na niej więcej akcji. Jeśli były, wtedy zostawiamy ją w bazie i zmieniamy tylko flagę DELETED 
+    if v_row_count <= 1 THEN    
       DELETE FROM history
       WHERE book_id=pi_id;
       DELETE FROM books 

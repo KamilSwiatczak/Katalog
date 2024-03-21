@@ -11,6 +11,32 @@ TYPE locations_table IS TABLE OF locations_table_type;
 
 
 
+function f_check_location_exists(
+  pi_name in locations.name%type
+) return boolean
+as
+  v_scope logger_logs.scope%type := gc_scope_prefix || 'f_check_location_exists';
+  v_params logger.tab_param;
+  v_location_count number;
+begin
+  logger.append_param(v_params, 'pi_name', pi_name);
+  logger.log('START', v_scope, null, v_params);
+
+  select count(*) into v_location_count
+  from LOCATIONS
+  where name = pi_name;
+
+  logger.log('END', v_scope);
+  return v_location_count > 0;
+exception
+  when others then
+    logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
+    raise;
+end f_check_location_exists;
+
+
+  
+
 procedure p_create_edit_location(
     pi_id in locations.id%type,
     pi_name in locations.name%type)
@@ -24,11 +50,9 @@ procedure p_create_edit_location(
     logger.append_param(v_params, 'pi_name', pi_name);
     logger.log('START', v_scope, null, v_params);
 
-      select count(1) into v_location_count
-      from LOCATIONS
-      where name = pi_name;
+
       if pi_name is not null then
-        if v_location_count = 0 then
+        if not f_check_location_exists(pi_name) then
             if pi_id is null then
               INSERT INTO locations (name)
               VALUES (pi_name);

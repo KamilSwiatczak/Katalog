@@ -13,5 +13,9 @@ procedure p_remove_location(
 
 function f_check_if_full RETURN APEX_T_NUMBER;
 
+function f_check_location_exists(
+  pi_name in locations.name%type
+) return boolean;
+
 end pkg_book_locations;
 /

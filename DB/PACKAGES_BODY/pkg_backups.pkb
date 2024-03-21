@@ -407,7 +407,7 @@ PROCEDURE p_wishlist_prices_export as
     logger.log('START', v_scope, null, v_params);
     v_context := apex_exec.open_query_context(
         p_location    => apex_exec.c_location_local_db,
-        p_sql_query   => 'select id, wishbook_id, price, date_added from wishlist_prices');
+        p_sql_query   => 'select id, wishbook_id, price, date_added from wishlist_prices;');
 
     v_export := apex_data_export.export (
                     p_context   => v_context,
@@ -549,9 +549,9 @@ procedure p_RESTORE_FROM_EXISTING_BACKUP(
     p_restore_actions;
     p_restore_books;
     p_restore_lending;
-    p_restore_history;
     p_restore_wishlist_books;
     p_restore_wishlist_prices;
+    p_restore_history;
 
     pkg_temp_files.p_clear_temp_files;
 
@@ -576,7 +576,7 @@ procedure p_RESTORE_FROM_EXISTING_BACKUP(
     APEX_COLLECTION.TRUNCATE_COLLECTION(
     p_collection_name => 'NOTIFICATIONS_BACKUP');
     APEX_COLLECTION.TRUNCATE_COLLECTION(
-    p_collection_name => 'SYSTEM_NOTIFICATIONS_USERS_BACKUP');    
+    p_collection_name => 'SYSTEM_NOTIFICATIONS_USERS_BACKUP');
     logger.log('END', v_scope);
   exception
     when others then
@@ -589,7 +589,7 @@ procedure p_parse_to_collection
   as
     v_scope logger_logs.scope%type := gc_scope_prefix || 'p_parse_to_collection';
     v_params logger.tab_param;
-    v_table_name varchar2(30); 
+    v_table_name varchar2(1000); 
   begin
     logger.log('START', v_scope, null, v_params);
     
@@ -838,7 +838,7 @@ procedure p_restore_books
   begin
     logger.log('START', v_scope, null, v_params);
 
-    select c001, c002, c003, c004, c005, c006, c007, c008, c009, c011, c012, c013, c014
+    select c001, c002, c003, c004, c005, c006, c007, c008, c009, c010, c011, c012, c013
     BULK COLLECT INTO v_books_backup
     FROM APEX_collections
     WHERE collection_name = 'BOOKS_BACKUP'; 
@@ -904,7 +904,7 @@ procedure p_restore_wishlist_books
   begin
     logger.log('START', v_scope, null, v_params);
 
-    select c001, c002, c003, c004, c005, c006, c007
+    select c001, c002, c003, c004, c005, REPLACE(c006, '.', ','), c007
     BULK COLLECT INTO v_wishlist_books_backup
     FROM APEX_collections
     WHERE collection_name = 'WISHLIST_BOOKS_BACKUP'; 
@@ -936,15 +936,17 @@ procedure p_restore_wishlist_prices
   begin
     logger.log('START', v_scope, null, v_params);
 
-    select c001, c002, c003, c004
+    select c001, c002, REPLACE(c003, '.', ','), c004
     BULK COLLECT INTO v_wishlist_prices_backup
     FROM APEX_collections
     WHERE collection_name = 'WISHLIST_PRICES_BACKUP'; 
 
     FORALL i IN 1..v_wishlist_prices_backup.COUNT
     insert into WISHLIST_PRICES (ID, WISHBOOK_ID, PRICE, DATE_ADDED)
-    values (v_wishlist_prices_backup(i).ID, v_wishlist_prices_backup(i).WISHBOOK_ID, v_wishlist_prices_backup(i).PRICE, v_wishlist_prices_backup(i).DATE_ADDED);
-
+    values (v_wishlist_prices_backup(i).ID, 
+            v_wishlist_prices_backup(i).WISHBOOK_ID, 
+            v_wishlist_prices_backup(i).PRICE, 
+            v_wishlist_prices_backup(i).DATE_ADDED);
 
     logger.log('Przywrócono wishlist_prices.', v_scope);
     exception

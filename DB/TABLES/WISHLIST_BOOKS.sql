@@ -13,7 +13,7 @@
 
   CREATE OR REPLACE EDITIONABLE TRIGGER "WISHLIST_BOOKS_CREATE_DATE" 
 before
-insert or update or delete on "WISHLIST_BOOKS"
+insert on "WISHLIST_BOOKS"
 for each row
 begin
     :NEW.CREATE_DATE := SYSDATE;
