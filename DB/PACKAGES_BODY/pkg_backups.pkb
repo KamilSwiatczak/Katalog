@@ -862,7 +862,8 @@ procedure p_restore_books
       SET COVER = v_temp_files(i).FILE_CONTENT,
           MIME_TYPE = v_temp_files(i).MIME_TYPE,
           FILE_NAME = SUBSTR(v_temp_files(i).FILE_NAME, 8)
-          WHERE ID = TO_NUMBER(SUBSTR(SUBSTR(v_temp_files(i).FILE_NAME, INSTR(v_temp_files(i).FILE_NAME, '/') + 1), 1, INSTR(SUBSTR(v_temp_files(i).FILE_NAME, INSTR(v_temp_files(i).FILE_NAME, '/') + 1), '_') - 1));      
+          WHERE TITLE = SUBSTR(v_temp_files(i).FILE_NAME, INSTR(v_temp_files(i).FILE_NAME, '/') + 1, INSTR(v_temp_files(i).FILE_NAME, '.') - INSTR(v_temp_files(i).FILE_NAME, '/') - 1);
+          --wycięcie z formatu id_title.jpg: WHERE ID = TO_NUMBER(SUBSTR(SUBSTR(v_temp_files(i).FILE_NAME, INSTR(v_temp_files(i).FILE_NAME, '/') + 1), 1, INSTR(SUBSTR(v_temp_files(i).FILE_NAME, INSTR(v_temp_files(i).FILE_NAME, '/') + 1), '_') - 1));      
 
     logger.log('Przywrócono books.', v_scope);
     exception
