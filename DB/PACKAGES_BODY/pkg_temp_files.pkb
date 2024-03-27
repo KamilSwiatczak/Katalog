@@ -77,7 +77,7 @@ begin
     loop 
         apex_zip.add_file (
             p_zipped_blob => v_zip_file,
-            p_file_name   => 'covers/'||c.title,
+            p_file_name   => 'covers/'||c.title||'.jpg',
             --p_file_name   => 'covers/'||c.title||SUBSTR(c.file_name, INSTR(c.file_name, '.', -1)),
             p_content     => c.cover);
     end loop;            

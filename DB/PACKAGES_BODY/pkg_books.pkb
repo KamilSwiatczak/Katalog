@@ -214,16 +214,22 @@ procedure p_openlibrary_api(
     v_params logger.tab_param;
     v_url VARCHAR2(4000);
     v_cover_url VARCHAR2(4000);
+    v_desc_url VARCHAR2(4000);
+    v_desc_id varchar2(200);
     v_response CLOB;
+    v_response_d CLOB;
     v_cover BLOB;
     j apex_json.t_values;
+    d apex_json.t_values;
     v_id varchar2(200);
     v_members apex_t_varchar2;
+    v_members_d apex_t_varchar2;
     v_year varchar2(200);
     v_publisher varchar2(200);
     v_title varchar2(200);
     v_author varchar2(200);
     v_lang varchar2(200);
+    v_desc VARCHAR2(4000);
   begin
     logger.append_param(v_params, 'pi_isbn', pi_isbn);
     logger.log('START', v_scope, null, v_params);
@@ -238,18 +244,40 @@ procedure p_openlibrary_api(
         p_http_method => 'GET'
     );
     apex_json.parse(j, v_response);
+
     
     v_members := apex_json.GET_MEMBERS (
         p_values => j,
         p_path => 'records'
     );
-    
+
+
     IF v_members IS NULL OR v_members.COUNT = 0 THEN
         RAISE_APPLICATION_ERROR(-20001, 'Książka o podanym ISBN nie jest dostępna w Open Library.');
     END IF;
 
     v_id := v_members(1);
-    
+
+    v_desc_id := APEX_JSON.GET_VARCHAR2 (
+        p_path => 'records.%0.details.details.works[1].key',
+        p0 => v_id,
+        p_values => j
+    );
+    v_desc_url := 'https://openlibrary.org'||v_desc_id||'.json';
+    v_response_d := APEX_WEB_SERVICE.MAKE_REST_REQUEST(
+        p_url => v_desc_url,
+        p_http_method => 'GET'
+    );
+    v_members_d := apex_json.GET_MEMBERS (
+        p_values => d,
+        p_path => ''
+    );
+    apex_json.parse(d, v_response_d);
+
+    v_desc:= APEX_JSON.GET_VARCHAR2 (
+        p_path => 'description',
+        p_values => d
+    );
     v_year := APEX_JSON.GET_VARCHAR2 (
         p_path => 'records.%0.data.publish_date',
         p0 => v_id,
@@ -278,6 +306,11 @@ procedure p_openlibrary_api(
     IF v_year IS NOT NULL THEN
       update books
         set YEAR=SUBSTR(v_year,-4)
+      where ISBN=pi_isbn;
+    END IF;
+    IF v_desc IS NOT NULL THEN
+      update books
+        set DESCRIPTION=v_desc
       where ISBN=pi_isbn;
     END IF;
     IF v_title IS NOT NULL THEN
@@ -326,45 +359,74 @@ procedure p_openlibrary_api_get_data(
       po_title out books.title%type,
       po_author out books.author%type,
       po_publisher out books.publisher%type,
-      po_language out books.language%type
+      po_language out books.language%type,
+      po_description out books.description%type
   )
   as
       v_scope logger_logs.scope%type := gc_scope_prefix || 'p_openlibrary_api_get_data';
       v_params logger.tab_param;
       v_url VARCHAR2(4000);
       v_cover_url VARCHAR2(4000);
+      v_desc_url VARCHAR2(4000);
+      v_desc_id varchar2(200);
       v_response CLOB;
+      v_response_d CLOB;
       v_cover BLOB;
       j apex_json.t_values;
+      d apex_json.t_values;
       v_id varchar2(200);
       v_members apex_t_varchar2;
+      v_members_d apex_t_varchar2;
 
   begin
       logger.append_param(v_params, 'pi_isbn', pi_isbn);
       logger.log('START', v_scope, null, v_params);
       v_url := 'https://openlibrary.org/api/volumes/brief/isbn/'||pi_isbn||'.json';
       v_cover_url := 'https://covers.openlibrary.org/b/isbn/'||pi_isbn||'-L.jpg'; 
+
       v_response := APEX_WEB_SERVICE.MAKE_REST_REQUEST(
           p_url => v_url,
           p_http_method => 'GET'
       );
+
       v_cover := APEX_WEB_SERVICE.MAKE_REST_REQUEST_B(
           p_url => v_cover_url,
           p_http_method => 'GET'
       );
       apex_json.parse(j, v_response);
-      
+
       v_members := apex_json.GET_MEMBERS (
           p_values => j,
           p_path => 'records'
       );
+
 
       IF v_members IS NULL OR v_members.COUNT = 0 THEN
           RAISE_APPLICATION_ERROR(-20001, 'Książka o podanym ISBN nie jest dostępna w Open Library.');
       END IF;
 
       v_id := v_members(1);
-      
+
+      v_desc_id := APEX_JSON.GET_VARCHAR2 (
+        p_path => 'records.%0.details.details.works[1].key',
+        p0 => v_id,
+        p_values => j
+      );
+      v_desc_url := 'https://openlibrary.org'||v_desc_id||'.json';
+      v_response_d := APEX_WEB_SERVICE.MAKE_REST_REQUEST(
+        p_url => v_desc_url,
+        p_http_method => 'GET'
+      );
+      v_members_d := apex_json.GET_MEMBERS (
+        p_values => d,
+        p_path => ''
+      );
+      apex_json.parse(d, v_response_d);
+
+      po_description:= APEX_JSON.GET_VARCHAR2 (
+        p_path => 'description',
+        p_values => d
+    );
       po_year := TO_NUMBER(SUBSTR(APEX_JSON.GET_VARCHAR2 (
           p_path => 'records.%0.data.publish_date',
           p0 => v_id,
@@ -396,7 +458,9 @@ procedure p_openlibrary_api_get_data(
       ELSIF po_language = '/languages/eng' THEN
           po_language := 'angielski';
       END IF;
-
+      logger.log(v_id, v_scope, null, v_params);
+      logger.log(v_desc_id, v_scope, null, v_params);
+      logger.log(v_desc_url, v_scope, null, v_params);
       apex_collection.create_or_truncate_collection('TEMP_COVER');
       APEX_COLLECTION.ADD_MEMBER(p_collection_name => 'TEMP_COVER', p_blob001 => v_cover);
 
