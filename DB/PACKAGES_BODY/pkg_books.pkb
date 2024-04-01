@@ -243,14 +243,11 @@ procedure p_openlibrary_api(
         p_url => v_cover_url,
         p_http_method => 'GET'
     );
-    apex_json.parse(j, v_response);
-
-    
+    apex_json.parse(j, v_response);   
     v_members := apex_json.GET_MEMBERS (
         p_values => j,
         p_path => 'records'
     );
-
 
     IF v_members IS NULL OR v_members.COUNT = 0 THEN
         RAISE_APPLICATION_ERROR(-20001, 'Książka o podanym ISBN nie jest dostępna w Open Library.');
@@ -274,10 +271,20 @@ procedure p_openlibrary_api(
     );
     apex_json.parse(d, v_response_d);
 
-    v_desc:= APEX_JSON.GET_VARCHAR2 (
-        p_path => 'description',
-        p_values => d
-    );
+    if APEX_JSON.DOES_EXIST(p_path => 'description.value', p_values => d) then
+        v_desc := APEX_JSON.GET_VARCHAR2 (
+            p_path => 'description.value',
+            p_values => d
+        );
+    elsif APEX_JSON.DOES_EXIST(p_path => 'description', p_values => d) then
+        v_desc := APEX_JSON.GET_VARCHAR2 (
+            p_path => 'description',
+            p_values => d
+        );
+    else
+        v_desc := null;
+    end if;
+
     v_year := APEX_JSON.GET_VARCHAR2 (
         p_path => 'records.%0.data.publish_date',
         p0 => v_id,
@@ -349,9 +356,11 @@ procedure p_openlibrary_api(
   exception
     when others then
       logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
-      raise;
-
+      raise; 
 end p_openlibrary_api;
+
+
+
 
 procedure p_openlibrary_api_get_data(
       pi_isbn in books.isbn%type,
@@ -400,7 +409,6 @@ procedure p_openlibrary_api_get_data(
           p_path => 'records'
       );
 
-
       IF v_members IS NULL OR v_members.COUNT = 0 THEN
           RAISE_APPLICATION_ERROR(-20001, 'Książka o podanym ISBN nie jest dostępna w Open Library.');
       END IF;
@@ -423,10 +431,20 @@ procedure p_openlibrary_api_get_data(
       );
       apex_json.parse(d, v_response_d);
 
-      po_description:= APEX_JSON.GET_VARCHAR2 (
-        p_path => 'description',
-        p_values => d
-    );
+      if APEX_JSON.DOES_EXIST(p_path => 'description.value', p_values => d) then
+          po_description := APEX_JSON.GET_VARCHAR2 (
+              p_path => 'description.value',
+              p_values => d
+          );
+      elsif APEX_JSON.DOES_EXIST(p_path => 'description', p_values => d) then
+          po_description := APEX_JSON.GET_VARCHAR2 (
+              p_path => 'description',
+              p_values => d
+          );
+      else
+          po_description := null;
+      end if;
+
       po_year := TO_NUMBER(SUBSTR(APEX_JSON.GET_VARCHAR2 (
           p_path => 'records.%0.data.publish_date',
           p0 => v_id,
@@ -458,9 +476,7 @@ procedure p_openlibrary_api_get_data(
       ELSIF po_language = '/languages/eng' THEN
           po_language := 'angielski';
       END IF;
-      logger.log(v_id, v_scope, null, v_params);
-      logger.log(v_desc_id, v_scope, null, v_params);
-      logger.log(v_desc_url, v_scope, null, v_params);
+
       apex_collection.create_or_truncate_collection('TEMP_COVER');
       APEX_COLLECTION.ADD_MEMBER(p_collection_name => 'TEMP_COVER', p_blob001 => v_cover);
 
