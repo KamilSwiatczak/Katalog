@@ -487,7 +487,76 @@ procedure p_openlibrary_api_get_data(
           raise;
 end p_openlibrary_api_get_data;
   
-    
+
+
+procedure p_narodowa_api_get_data(
+      pi_isbn in books.isbn%type,
+      po_year out books.year%type,
+      po_title out books.title%type,
+      po_author out books.author%type,
+      po_publisher out books.publisher%type,
+      po_language out books.language%type,
+      po_description out books.description%type
+  )
+  as
+    v_scope logger_logs.scope%type := gc_scope_prefix || 'p_narodowa_api_get_data';
+    v_params logger.tab_param;
+      v_url VARCHAR2(4000);
+      v_response CLOB;
+      j apex_json.t_values;
+      v_members apex_t_varchar2;
+  begin
+    logger.append_param(v_params, 'pi_isbn', pi_isbn);
+    logger.log('START', v_scope, null, v_params);
+
+    v_url := 'https://data.bn.org.pl//api/institutions/bibs.json?isbnIssn='||pi_isbn;
+    v_response := APEX_WEB_SERVICE.MAKE_REST_REQUEST(
+          p_url => v_url,
+          p_http_method => 'GET'
+    );
+    apex_json.parse(j, v_response);
+
+    v_members := apex_json.GET_MEMBERS (
+          p_values => j,
+          p_path => 'bibs[1]'
+      );
+
+    IF v_members IS NULL OR v_members.COUNT = 0 THEN
+          RAISE_APPLICATION_ERROR(-20001, 'Książka o podanym ISBN nie jest dostępna w Bibliotece Narodowej.');
+    END IF;
+
+    po_year := APEX_JSON.GET_VARCHAR2 (
+        p_path => 'bibs[1].publicationYear',
+        p_values => j
+      );
+    po_title := APEX_JSON.GET_VARCHAR2 (
+        p_path => 'bibs[1].title',
+        p_values => j
+      );
+    po_publisher := APEX_JSON.GET_VARCHAR2 (
+        p_path => 'bibs[1].publisher',
+        p_values => j
+      );
+    po_author := APEX_JSON.GET_VARCHAR2 (
+        p_path => 'bibs[1].author',
+        p_values => j
+      );
+    po_language := APEX_JSON.GET_VARCHAR2 (
+        p_path => 'bibs[1].language',
+        p_values => j
+      );
+    po_description := APEX_JSON.GET_VARCHAR2 (
+        p_path => 'bibs[1].genre',
+        p_values => j
+      );
+    logger.log('END', v_scope);
+  exception
+    when others then
+      logger.log_error('Nieznany błąd: '||SQLERRM, v_scope, null, v_params);
+      raise;
+end p_narodowa_api_get_data;
+
+  
 
 end pkg_books;
 /

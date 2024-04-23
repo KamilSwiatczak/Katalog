@@ -41,5 +41,14 @@ procedure p_openlibrary_api_get_data(
     po_language out books.language%type,
     po_description out books.description%type
 );
+procedure p_narodowa_api_get_data(
+    pi_isbn in books.isbn%type,
+    po_year out books.year%type,
+    po_title out books.title%type,
+    po_author out books.author%type,
+    po_publisher out books.publisher%type,
+    po_language out books.language%type,
+    po_description out books.description%type
+);
 end pkg_books;
 /
