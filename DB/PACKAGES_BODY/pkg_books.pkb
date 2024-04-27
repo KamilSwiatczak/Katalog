@@ -386,7 +386,8 @@ procedure p_openlibrary_api_get_data(
       v_id varchar2(200);
       v_members apex_t_varchar2;
       v_members_d apex_t_varchar2;
-
+      v_number_of_authors NUMBER;
+      v_author books.author%type;
   begin
       logger.append_param(v_params, 'pi_isbn', pi_isbn);
       logger.log('START', v_scope, null, v_params);
@@ -450,21 +451,60 @@ procedure p_openlibrary_api_get_data(
           p0 => v_id,
           p_values => j), -4)
       );
-      po_title := APEX_JSON.GET_VARCHAR2 (
-        p_path => 'records.%0.data.title',
+
+      if APEX_JSON.DOES_EXIST(        
+        p_path => 'records.%0.data.subtitle',
         p0 => v_id,
-        p_values => j
-      );
+        p_values => j)
+      then 
+        po_title := APEX_JSON.GET_VARCHAR2 (
+          p_path => 'records.%0.data.title',
+          p0 => v_id,
+          p_values => j
+        )||': '|| APEX_JSON.GET_VARCHAR2 (
+          p_path => 'records.%0.data.subtitle',
+          p0 => v_id,
+          p_values => j
+        );
+      else 
+        po_title := APEX_JSON.GET_VARCHAR2 (
+          p_path => 'records.%0.data.title',
+          p0 => v_id,
+          p_values => j
+          );
+      end if;
+
       po_publisher := APEX_JSON.GET_VARCHAR2 (
           p_path => 'records.%0.data.publishers[1].name',
           p0 => v_id,
           p_values => j
       );
+      v_number_of_authors := APEX_JSON.GET_COUNT(p_path => 'records.%0.data.authors',
+          p0 => v_id,
+          p_values => j
+      );
+
+      if v_number_of_authors <= 1 then
       po_author := APEX_JSON.GET_VARCHAR2 (
           p_path => 'records.%0.data.authors[1].name',
           p0 => v_id,
           p_values => j
       );
+      else v_author := APEX_JSON.GET_VARCHAR2 (
+          p_path => 'records.%0.data.authors[1].name',
+          p0 => v_id,
+          p_values => j);
+      
+        for i in 1..v_number_of_authors-1 loop
+            v_author := v_author||', '||APEX_JSON.GET_VARCHAR2 (
+            p_path => 'records.%0.data.authors[%1].name',
+            p0 => v_id,
+            p1 => i+1,
+            p_values => j);
+        end loop;
+        po_author := v_author;
+      END IF;
+
       po_language := APEX_JSON.GET_VARCHAR2 (
         p_path => 'records.%0.details.details.languages[1].key',
         p0 => v_id,
