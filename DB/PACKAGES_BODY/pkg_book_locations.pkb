@@ -127,7 +127,7 @@ function f_check_if_full
       for i in v_table.first..v_table.last 
       loop
         logger.log(v_table(i).name);
-        if v_table(i).current_count > v_table(i).max_count then 
+        if v_table(i).current_count >= v_table(i).max_count then 
           v_return.extend();
           v_return(v_return.last) := v_table(i).id;
           logger.log(v_table(i).id, v_scope);

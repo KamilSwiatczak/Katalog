@@ -17,3 +17,5 @@ prompt ..packages
 @@..\DB\PACKAGES_BODY\pkg_notifications.pkb;
 @@..\DB\PACKAGES\pkg_temp_files.pks;
 @@..\DB\PACKAGES_BODY\pkg_temp_files.pkb;
+@@..\DB\PACKAGES\pkg_games.pks;
+@@..\DB\PACKAGES_BODY\pkg_games.pkb;
