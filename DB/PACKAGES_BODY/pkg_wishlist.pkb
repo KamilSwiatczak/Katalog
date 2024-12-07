@@ -221,7 +221,7 @@ procedure p_price_drop_below_average_notification(
     order by id desc
     fetch FIRST 1 rows only;
 
-    select  TITLE into v_title from WISHLIST_BOOKS
+    select TITLE into v_title from WISHLIST_BOOKS
     where ID = pi_wishbook_id;
 
     SELECT AVG(PRICE) into v_30_average
@@ -237,7 +237,7 @@ procedure p_price_drop_below_average_notification(
       logger.log('v_30_average:'||v_30_average, v_scope);
       logger.log('v_new_price:'||v_new_price, v_scope);
       logger.log('gc_price_percentage:'||gc_price_percentage, v_scope);
-    if v_30_average IS NOT NULL and v_new_price <= v_30_average*gc_price_percentage then
+    if v_30_average IS NOT NULL and v_new_price < v_30_average*gc_price_percentage then
 
     for i in (select * from SYSTEM_NOTIFICATIONS_USERS)
       loop

@@ -26,13 +26,13 @@ procedure p_game_create_update(
       pi_release_date IN games.release_date%TYPE
 );
 
-procedure p_mobygames_api_get_data(
-      pio_title in games.title%type,
-      po_description IN games.description%TYPE,
-      po_genre IN games.genre%TYPE,
-      po_score IN games.score%TYPE,
-      po_year IN games.release_date%TYPE
-);
+-- procedure p_mobygames_api_get_data(
+--       pio_title in games.title%type,
+--       po_description IN games.description%TYPE,
+--       po_genre IN games.genre%TYPE,
+--       po_score IN games.score%TYPE,
+--       po_year IN games.release_date%TYPE
+-- );
 
 end pkg_games;
 /
